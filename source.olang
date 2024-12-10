@@ -1,0 +1,7 @@
+var canYouSolveThis = fun(a) {
+    var num = 6/2*(1+2)
+    printLn(num)
+    return 10
+}
+
+return canYouSolveThis(10)
