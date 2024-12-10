@@ -47,6 +47,10 @@ impl Default for Environment {
             "printLn".to_string(),
             Value::Function(Function::Builtin(builtin::print_ln)),
         );
+        environment.declare(
+            "toString".to_string(),
+            Value::Function(Function::Builtin(builtin::to_string)),
+        );
         environment
     }
 }

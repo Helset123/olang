@@ -1,5 +1,4 @@
-use std::fmt::{self, Write};
-use std::rc::Rc;
+use std::fmt::{self};
 
 use crate::parser::DefinedFunction;
 
@@ -22,9 +21,12 @@ pub enum Value {
 
 impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match Value {
-            Value::Bool(v) => f.write_str(format!("{}", v).as_str()),
+        match self {
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::Int(i) => write!(f, "{}", i),
+            Value::String(s) => write!(f, "{}", s),
+            Value::Function(v) => write!(f, "{:?}", v),
+            _ => Err(fmt::Error),
         }
-        Ok(())
     }
 }
