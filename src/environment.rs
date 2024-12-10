@@ -7,19 +7,21 @@ pub struct Environment {
 }
 
 impl Environment {
-    pub fn new() -> Environment {
+    pub fn new() -> Self {
         Environment {
             scopes: vec![HashMap::new()],
         }
     }
 
     // remove a scope to the environment
-    pub fn pop(&mut self) {
+    pub fn pop(&mut self) -> &mut Self {
         self.scopes.pop();
+        self
     }
     // add a scope to the environment
-    pub fn push(&mut self) {
+    pub fn push(&mut self) -> &mut Self {
         self.scopes.push(HashMap::new());
+        self
     }
 
     pub fn get(&self, id: &String) -> Option<Value> {
@@ -35,22 +37,28 @@ impl Environment {
         None
     }
 
-    pub fn declare(&mut self, id: String, value: Value) {
+    pub fn declare(&mut self, id: String, value: Value) -> &mut Self {
         self.scopes.last_mut().unwrap().insert(id, value);
+        self
+    }
+
+    fn declareBuiltin(&mut self, id: String, function: fn(Vec<Value>) -> Value) -> &mut Self {
+        self.declare(id, Value::Function(Function::Builtin(function)));
+        self
     }
 }
 
 impl Default for Environment {
-    fn default() -> Environment {
-        let mut environment = Environment::new();
-        environment.declare(
+    fn default() -> Self {
+        let mut env = Environment::new();
+        env.declare(
             "printLn".to_string(),
             Value::Function(Function::Builtin(builtin::print_ln)),
-        );
-        environment.declare(
+        )
+        .declare(
             "toString".to_string(),
             Value::Function(Function::Builtin(builtin::to_string)),
         );
-        environment
+        env
     }
 }

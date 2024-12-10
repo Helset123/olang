@@ -1,10 +1,9 @@
 use crate::{
     environment::Environment,
-    parser::{Block, DefinedFunction, Expression, Operator, Parser},
+    parser::{Block, Expression, Operator, Parser},
     value::{Function, Value},
 };
 use anyhow::{anyhow, Result};
-use std::collections::HashMap;
 
 pub struct Interpreter {
     environment: Environment,
@@ -44,7 +43,7 @@ impl Interpreter {
 
     fn eval_block(&mut self, private_environment: bool, block: Block) -> Value {
         if private_environment {
-            self.environment.push()
+            self.environment.push();
         }
 
         for expression in block {
