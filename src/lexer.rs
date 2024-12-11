@@ -28,7 +28,7 @@ pub enum TokenValue {
 #[derive(Debug, Clone)]
 pub struct Token {
     pub value: TokenValue,
-    region: Region,
+    pub region: Region,
 }
 
 impl Token {
@@ -76,8 +76,8 @@ impl fmt::Display for Location {
 
 #[derive(Debug, Clone)]
 pub struct Region {
-    start: Location,
-    end: Location,
+    pub start: Location,
+    pub end: Location,
 }
 
 impl fmt::Display for Region {

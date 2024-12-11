@@ -1,6 +1,6 @@
 use crate::{
     environment::Environment,
-    parser::{Block, Expression, Operator, Parser},
+    parser::{Block, Expression, ExpressionValue, Operator, Parser},
     value::{Function, Value},
 };
 use anyhow::{anyhow, Result};
@@ -137,24 +137,24 @@ impl Interpreter {
     }
 
     fn eval_expression(&mut self, expression: Expression) -> Value {
-        match expression {
-            Expression::Int(v) => Value::Int(v),
-            Expression::String(v) => Value::String(v),
-            Expression::Bool(v) => Value::Bool(v),
-            Expression::Null => Value::Null,
-            Expression::Return(v) => self.eval_return(v),
-            Expression::Function(v) => Value::Function(Function::Defined(v)),
-            Expression::Block(v) => self.eval_block(true, v),
-            Expression::Identifier(id) => self.eval_identifier(id),
-            Expression::Call {
+        match expression.value {
+            ExpressionValue::Int(v) => Value::Int(v),
+            ExpressionValue::String(v) => Value::String(v),
+            ExpressionValue::Bool(v) => Value::Bool(v),
+            ExpressionValue::Null => Value::Null,
+            ExpressionValue::Return(v) => self.eval_return(v),
+            ExpressionValue::Function(v) => Value::Function(Function::Defined(v)),
+            ExpressionValue::Block(v) => self.eval_block(true, v),
+            ExpressionValue::Identifier(id) => self.eval_identifier(id),
+            ExpressionValue::Call {
                 identifier,
                 arguments,
             } => self.eval_call(identifier, arguments),
-            Expression::VariableDeclaration {
+            ExpressionValue::VariableDeclaration {
                 identifier,
                 expression,
             } => self.eval_declare_variable(identifier, expression),
-            Expression::Binary {
+            ExpressionValue::Binary {
                 left,
                 operator,
                 right,
