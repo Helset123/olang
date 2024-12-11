@@ -1,4 +1,4 @@
-use crate::builtin;
+use crate::builtin::*;
 use crate::value::{Function, Value};
 use std::collections::HashMap;
 
@@ -42,7 +42,7 @@ impl Environment {
         self
     }
 
-    fn declareBuiltin(&mut self, id: String, function: fn(Vec<Value>) -> Value) -> &mut Self {
+    fn declare_builtin(&mut self, id: String, function: fn(Vec<Value>) -> Value) -> &mut Self {
         self.declare(id, Value::Function(Function::Builtin(function)));
         self
     }
@@ -51,14 +51,8 @@ impl Environment {
 impl Default for Environment {
     fn default() -> Self {
         let mut env = Environment::new();
-        env.declare(
-            "printLn".to_string(),
-            Value::Function(Function::Builtin(builtin::print_ln)),
-        )
-        .declare(
-            "toString".to_string(),
-            Value::Function(Function::Builtin(builtin::to_string)),
-        );
+        env.declare_builtin("printLn".to_string(), print_ln)
+            .declare_builtin("toString".to_string(), to_string);
         env
     }
 }
