@@ -1,15 +1,20 @@
 use crate::lexer::{Lexer, LexerError, Region, Token, TokenValue, TokenValueDiscriminants};
+use strum::{Display, EnumDiscriminants};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ParserError {
-    #[error("{0} expected token of value {1}, found {2}", .found.region, .expected, .found.value)]
+    #[error("{0} unexpected token found while parsing \"{1}\" expression, expected token of value \"{2}\", found \"{3}\"", .found.region, .while_parsing, .expected, .found.value)]
     ExpectedToken {
+        while_parsing: ExpressionValueDiscriminants,
         expected: TokenValueDiscriminants,
         found: Token,
     },
-    #[error("{0} unexpected character found during parsing: {1}", .found.region, .found.value)]
-    UnexpectedToken { found: Token },
+    #[error("{0} unexpected token found while parsing \"{1}\" expression, found token of value \"{2}\"", .found.region, match .while_parsing {Some(v) => v.to_string(), None => "generic".to_string()}, .found.value)]
+    UnexpectedToken {
+        while_parsing: Option<ExpressionValueDiscriminants>,
+        found: Token,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -29,7 +34,8 @@ pub struct DefinedFunction {
     pub body: Block,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, EnumDiscriminants)]
+#[strum_discriminants(derive(Display))]
 pub enum ExpressionValue {
     Int(i64),
     String(String),
@@ -94,22 +100,41 @@ impl Parser {
         &self.tokens[self.t - 1]
     }
 
+    #[track_caller]
     fn expect_token_discriminant(
         &mut self,
+        while_parsing: ExpressionValueDiscriminants,
         value: TokenValueDiscriminants,
     ) -> Result<(), ParserError> {
         if value != self.current_val().into() {
             Err(ParserError::ExpectedToken {
                 expected: value,
                 found: self.current().clone(),
+                while_parsing,
             })
         } else {
             Ok(())
         }
     }
 
+    #[track_caller]
+    fn expect_token_err(
+        &self,
+        while_parsing: ExpressionValueDiscriminants,
+        value: TokenValueDiscriminants,
+    ) -> ParserError {
+        ParserError::ExpectedToken {
+            expected: value,
+            found: self.current().clone(),
+            while_parsing,
+        }
+    }
+
     fn parse_block(&mut self) -> Result<Block, ParserError> {
-        self.expect_token_discriminant(TokenValueDiscriminants::OpenBrace)?;
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Block,
+            TokenValueDiscriminants::OpenBrace,
+        )?;
         self.advance();
 
         let mut expressions: Vec<Expression> = vec![];
@@ -125,7 +150,10 @@ impl Parser {
     }
 
     fn parse_return(&mut self) -> Result<ExpressionValue, ParserError> {
-        self.expect_token_discriminant(TokenValueDiscriminants::KeywordReturn)?;
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Return,
+            TokenValueDiscriminants::KeywordReturn,
+        )?;
         self.advance();
 
         Ok(ExpressionValue::Return(Box::new(self.parse_expression()?)))
@@ -134,10 +162,10 @@ impl Parser {
     fn parse_identifier(&mut self) -> Result<ExpressionValue, ParserError> {
         let value = match self.current_val() {
             TokenValue::Identifier(v) => Ok(v.clone()),
-            _ => Err(ParserError::ExpectedToken {
-                expected: TokenValueDiscriminants::Identifier,
-                found: self.current().clone(),
-            }),
+            _ => Err(self.expect_token_err(
+                ExpressionValueDiscriminants::Identifier,
+                TokenValueDiscriminants::Identifier,
+            )),
         }?;
         self.advance();
         Ok(ExpressionValue::Identifier(value))
@@ -146,10 +174,10 @@ impl Parser {
     fn parse_int(&mut self) -> Result<ExpressionValue, ParserError> {
         let value = match self.current_val() {
             TokenValue::Int(v) => Ok(*v),
-            _ => Err(ParserError::ExpectedToken {
-                expected: TokenValueDiscriminants::Int,
-                found: self.current().clone(),
-            }),
+            _ => Err(self.expect_token_err(
+                ExpressionValueDiscriminants::Int,
+                TokenValueDiscriminants::Int,
+            )),
         }?;
         self.advance();
         Ok(ExpressionValue::Int(value))
@@ -158,17 +186,20 @@ impl Parser {
     fn parse_string(&mut self) -> Result<ExpressionValue, ParserError> {
         let value = match self.current_val() {
             TokenValue::String(v) => Ok(v.clone()),
-            _ => Err(ParserError::ExpectedToken {
-                expected: TokenValueDiscriminants::String,
-                found: self.current().clone(),
-            }),
+            _ => Err(self.expect_token_err(
+                ExpressionValueDiscriminants::String,
+                TokenValueDiscriminants::String,
+            )),
         }?;
         self.advance();
         Ok(ExpressionValue::String(value))
     }
 
     fn parse_null(&mut self) -> Result<ExpressionValue, ParserError> {
-        self.expect_token_discriminant(TokenValueDiscriminants::KeywordNull)?;
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Null,
+            TokenValueDiscriminants::KeywordNull,
+        )?;
         self.advance();
         Ok(ExpressionValue::Null)
     }
@@ -178,6 +209,7 @@ impl Parser {
             TokenValue::KeywordTrue => Ok(true),
             TokenValue::KeywordFalse => Ok(false),
             _ => Err(ParserError::UnexpectedToken {
+                while_parsing: Some(ExpressionValueDiscriminants::Bool),
                 found: self.current().clone(),
             }),
         }?;
@@ -186,20 +218,26 @@ impl Parser {
     }
 
     fn parse_variable_declaration(&mut self) -> Result<ExpressionValue, ParserError> {
-        self.expect_token_discriminant(TokenValueDiscriminants::KeywordVar)?;
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::VariableDeclaration,
+            TokenValueDiscriminants::KeywordVar,
+        )?;
         self.advance();
 
         let identifier = match self.current_val() {
             TokenValue::Identifier(v) => Ok(v),
-            _ => Err(ParserError::ExpectedToken {
-                expected: TokenValueDiscriminants::Identifier,
-                found: self.current().clone(),
-            }),
+            _ => Err(self.expect_token_err(
+                ExpressionValueDiscriminants::VariableDeclaration,
+                TokenValueDiscriminants::Identifier,
+            )),
         }?
         .clone();
         self.advance();
 
-        self.expect_token_discriminant(TokenValueDiscriminants::EqualSign)?;
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::VariableDeclaration,
+            TokenValueDiscriminants::EqualSign,
+        )?;
         self.advance();
 
         Ok(ExpressionValue::VariableDeclaration {
@@ -211,14 +249,17 @@ impl Parser {
     fn parse_call(&mut self) -> Result<ExpressionValue, ParserError> {
         let identifier = match self.current_val() {
             TokenValue::Identifier(v) => Ok(v.clone()),
-            _ => Err(ParserError::ExpectedToken {
-                expected: TokenValueDiscriminants::Identifier,
-                found: self.current().clone(),
-            }),
+            _ => Err(self.expect_token_err(
+                ExpressionValueDiscriminants::Call,
+                TokenValueDiscriminants::Identifier,
+            )),
         }?;
         self.advance();
 
-        self.expect_token_discriminant(TokenValueDiscriminants::OpenParenthesis)?;
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Call,
+            TokenValueDiscriminants::OpenParenthesis,
+        )?;
         self.advance();
 
         let mut arguments = vec![];
@@ -234,10 +275,16 @@ impl Parser {
     }
 
     fn parse_function(&mut self) -> Result<ExpressionValue, ParserError> {
-        self.expect_token_discriminant(TokenValueDiscriminants::KeywordFun)?;
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Function,
+            TokenValueDiscriminants::KeywordFun,
+        )?;
         self.advance();
 
-        self.expect_token_discriminant(TokenValueDiscriminants::OpenParenthesis)?;
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Function,
+            TokenValueDiscriminants::OpenParenthesis,
+        )?;
         self.advance();
 
         let mut parameters = vec![];
@@ -252,6 +299,7 @@ impl Parser {
                 }
                 _ => {
                     return Err(ParserError::UnexpectedToken {
+                        while_parsing: Some(ExpressionValueDiscriminants::Function),
                         found: self.current().clone(),
                     })
                 }
@@ -282,7 +330,10 @@ impl Parser {
 
                 let expression = self.parse_expression()?;
 
-                self.expect_token_discriminant(TokenValueDiscriminants::CloseParenthesis)?;
+                self.expect_token_discriminant(
+                    ExpressionValueDiscriminants::Binary, // FIXME: this dosen't have a type, binary is the closest but idk
+                    TokenValueDiscriminants::CloseParenthesis,
+                )?;
                 self.advance();
 
                 Ok(expression.value)
@@ -294,6 +345,7 @@ impl Parser {
             TokenValue::KeywordVar => self.parse_variable_declaration(),
             TokenValue::KeywordFun => self.parse_function(),
             _ => Err(ParserError::UnexpectedToken {
+                while_parsing: None,
                 found: self.current().clone(),
             }),
         }?;
