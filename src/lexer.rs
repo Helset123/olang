@@ -1,5 +1,5 @@
-use core::fmt;
-use std::{string::String, vec::Vec};
+use std::{fmt, string::String, vec::Vec};
+use thiserror::Error;
 
 #[derive(Debug, PartialEq, Clone)]
 pub enum TokenValue {
@@ -38,33 +38,61 @@ impl Token {
 }
 
 #[derive(Debug, Clone)]
-pub struct Region {
-    start: usize,
-    end: usize,
+pub struct Location {
+    row: usize,
+    col: usize,
 }
 
-#[derive(Debug)]
-pub struct LexerError {
-    details: String,
-    location: usize,
-}
+impl Location {
+    fn from_index(source: &Vec<char>, index: usize) -> Self {
+        let mut location = Location { row: 1, col: 1 };
 
-impl LexerError {
-    fn new(location: usize, details: &str) -> LexerError {
-        LexerError {
-            details: details.to_string(),
-            location,
+        let target = if index > source.len() {
+            // if the index is out of bounds
+            // return the last character in the source
+            source.len() - 1
+        } else {
+            index
+        };
+
+        for i in 0..target {
+            if source[i] == '\n' {
+                location.row += 1;
+                location.col = 1;
+            } else {
+                location.col += 1
+            };
         }
+
+        location
     }
 }
 
-impl fmt::Display for LexerError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Error at {}: {}", self.location, self.details)
+impl fmt::Display for Location {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.row, self.col)
     }
 }
 
-impl std::error::Error for LexerError {}
+#[derive(Debug, Clone)]
+pub struct Region {
+    start: Location,
+    end: Location,
+}
+
+impl fmt::Display for Region {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} -> {}", self.start, self.end)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum LexerError {
+    #[error("{location} unexpected character found during parsing: {char}")]
+    UnexpectedCharacter { location: Location, char: char },
+    #[error("{location} expected digit in int token, found: {char}")]
+    NotDigit { location: Location, char: char },
+}
 
 pub struct Lexer {
     source: Vec<char>,
@@ -79,13 +107,31 @@ impl Lexer {
         }
     }
 
+    fn current_location(&self) -> Location {
+        Location::from_index(&self.source, self.c)
+    }
+
+    fn advance(&mut self) -> &mut Self {
+        self.c += 1;
+        self
+    }
+
+    fn current(&self) -> char {
+        self.source[self.c]
+    }
+
     pub fn tokenize(&mut self) -> Result<Vec<Token>, LexerError> {
         let mut result: Vec<Token> = vec![];
         self.c = 0;
 
         while self.c < self.source.len() {
-            let mut region = Region { start: 0, end: 0 };
-            region.start = self.c;
+            let mut region = Region {
+                start: Location { row: 0, col: 0 },
+                end: Location { row: 0, col: 0 },
+            };
+
+            region.start = self.current_location();
+
             // match for simple one char poiters
             match match self.source[self.c] {
                 '(' => Some(TokenValue::OpenParenthesis),
@@ -101,72 +147,71 @@ impl Lexer {
                 _ => None,
             } {
                 Some(v) => {
-                    region.end = self.c;
+                    region.end = self.current_location();
                     result.push(Token::new(region, v));
-                    self.c += 1;
+                    self.advance();
                     continue;
                 }
                 _ => {}
             }
 
-            if self.source[self.c].is_whitespace() {
-                self.c += 1;
+            if self.current().is_whitespace() {
+                self.advance();
                 continue;
             }
 
             // string token
-            if self.source[self.c] == '"' {
+            if self.current() == '"' {
                 let mut value = "".to_string();
-                self.c += 1;
-                while self.c < self.source.len() && self.source[self.c] != '"' {
-                    value.push(self.source[self.c]);
-                    self.c += 1
+                self.advance();
+                while self.c < self.source.len() && self.current() != '"' {
+                    value.push(self.current());
+                    self.advance();
                 }
-                self.c += 1;
+                self.advance();
 
-                region.end = self.c;
+                region.end = self.current_location();
                 result.push(Token::new(region, TokenValue::String(value)));
             }
             // int token
-            else if self.source[self.c].is_digit(10) || self.source[self.c] == '-' {
+            else if self.current().is_digit(10) || self.current() == '-' {
                 let mut value: i64 = 0;
                 let mut negative = false;
 
-                if self.source[self.c] == '-' {
+                if self.current() == '-' {
                     negative = true;
                     self.c += 1;
                 };
 
-                while self.c < self.source.len() && self.source[self.c].is_digit(10) {
+                while self.c < self.source.len() && self.current().is_digit(10) {
                     value = value * 10
-                        + self.source[self.c]
-                            .to_digit(10)
-                            .ok_or(LexerError::new(self.c, "Expected digit in int token"))?
-                            as i64;
-                    self.c += 1
+                        + self.current().to_digit(10).ok_or(LexerError::NotDigit {
+                            location: self.current_location(),
+                            char: self.source[self.c],
+                        })? as i64;
+                    self.advance();
                 }
 
                 if negative {
                     value *= -1
                 }
 
-                region.end = self.c;
+                region.end = self.current_location();
                 result.push(Token::new(region, TokenValue::Int(value)));
             }
             // identifier or keyword
-            else if self.source[self.c].is_alphanumeric() && !self.source[self.c].is_whitespace()
-            {
+            else if self.current().is_alphanumeric() && !self.current().is_whitespace() {
                 let mut value = "".to_string();
 
                 while self.c < self.source.len()
-                    && self.source[self.c].is_alphanumeric()
-                    && !self.source[self.c].is_whitespace()
+                    && self.current().is_alphanumeric()
+                    && !self.current().is_whitespace()
                 {
-                    value.push(self.source[self.c]);
-                    self.c += 1
+                    value.push(self.current());
+                    self.advance();
                 }
 
-                region.end = self.c;
+                region.end = self.current_location();
                 // check if this matches any keywords
                 result.push(Token::new(
                     region,
@@ -181,14 +226,17 @@ impl Lexer {
                     },
                 ))
             } else {
-                return Err(LexerError::new(self.c, "Unexpected character"));
+                return Err(LexerError::UnexpectedCharacter {
+                    location: self.current_location(),
+                    char: self.current(),
+                });
             }
         }
 
         result.push(Token::new(
             Region {
-                start: self.source.len() - 1,
-                end: self.source.len() - 1,
+                start: Location::from_index(&self.source, usize::MAX),
+                end: Location::from_index(&self.source, usize::MAX),
             },
             TokenValue::EndOfFile,
         ));
