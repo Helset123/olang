@@ -1,7 +1,9 @@
 use std::{fmt, string::String, vec::Vec};
+use strum::{Display, EnumDiscriminants};
 use thiserror::Error;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(EnumDiscriminants, Display, Debug, PartialEq, Clone)]
+#[strum_discriminants(derive(Display))]
 pub enum TokenValue {
     KeywordReturn,      // return
     KeywordFun,         // fun

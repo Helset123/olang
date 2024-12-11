@@ -1,5 +1,16 @@
-use crate::lexer::{Lexer, LexerError, Region, Token, TokenValue};
-use anyhow::{anyhow, Result};
+use crate::lexer::{Lexer, LexerError, Region, Token, TokenValue, TokenValueDiscriminants};
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ParserError {
+    #[error("{0} expected token of value {1}, found {2}", .found.region, .expected, .found.value)]
+    ExpectedToken {
+        expected: TokenValueDiscriminants,
+        found: Token,
+    },
+    #[error("{0} unexpected character found during parsing: {1}", .found.region, .found.value)]
+    UnexpectedToken { found: Token },
+}
 
 #[derive(Debug, Clone)]
 pub enum Operator {
@@ -83,13 +94,22 @@ impl Parser {
         &self.tokens[self.t - 1]
     }
 
-    fn parse_block(&mut self) -> Result<Block> {
-        match self.current_val() {
-            TokenValue::OpenBrace => Ok(()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing block expression"
-            )),
-        }?;
+    fn expect_token_discriminant(
+        &mut self,
+        value: TokenValueDiscriminants,
+    ) -> Result<(), ParserError> {
+        if value != self.current_val().into() {
+            Err(ParserError::ExpectedToken {
+                expected: value,
+                found: self.current().clone(),
+            })
+        } else {
+            Ok(())
+        }
+    }
+
+    fn parse_block(&mut self) -> Result<Block, ParserError> {
+        self.expect_token_discriminant(TokenValueDiscriminants::OpenBrace)?;
         self.advance();
 
         let mut expressions: Vec<Expression> = vec![];
@@ -104,98 +124,82 @@ impl Parser {
         Ok(expressions)
     }
 
-    fn parse_return(&mut self) -> Result<ExpressionValue> {
-        match self.current_val() {
-            TokenValue::KeywordReturn => Ok(()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing return expression"
-            )),
-        }?;
+    fn parse_return(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(TokenValueDiscriminants::KeywordReturn)?;
         self.advance();
 
         Ok(ExpressionValue::Return(Box::new(self.parse_expression()?)))
     }
 
-    fn parse_identifier(&mut self) -> Result<ExpressionValue> {
+    fn parse_identifier(&mut self) -> Result<ExpressionValue, ParserError> {
         let value = match self.current_val() {
             TokenValue::Identifier(v) => Ok(v.clone()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing int expression"
-            )),
+            _ => Err(ParserError::ExpectedToken {
+                expected: TokenValueDiscriminants::Identifier,
+                found: self.current().clone(),
+            }),
         }?;
         self.advance();
         Ok(ExpressionValue::Identifier(value))
     }
 
-    fn parse_int(&mut self) -> Result<ExpressionValue> {
+    fn parse_int(&mut self) -> Result<ExpressionValue, ParserError> {
         let value = match self.current_val() {
             TokenValue::Int(v) => Ok(*v),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing int expression"
-            )),
+            _ => Err(ParserError::ExpectedToken {
+                expected: TokenValueDiscriminants::Int,
+                found: self.current().clone(),
+            }),
         }?;
         self.advance();
         Ok(ExpressionValue::Int(value))
     }
 
-    fn parse_string(&mut self) -> Result<ExpressionValue> {
+    fn parse_string(&mut self) -> Result<ExpressionValue, ParserError> {
         let value = match self.current_val() {
             TokenValue::String(v) => Ok(v.clone()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing string expression"
-            )),
+            _ => Err(ParserError::ExpectedToken {
+                expected: TokenValueDiscriminants::String,
+                found: self.current().clone(),
+            }),
         }?;
         self.advance();
         Ok(ExpressionValue::String(value))
     }
 
-    fn parse_null(&mut self) -> Result<ExpressionValue> {
-        match self.current_val() {
-            TokenValue::KeywordNull => Ok(()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing null expression"
-            )),
-        }?;
+    fn parse_null(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(TokenValueDiscriminants::KeywordNull)?;
         self.advance();
         Ok(ExpressionValue::Null)
     }
 
-    fn parse_bool(&mut self) -> Result<ExpressionValue> {
+    fn parse_bool(&mut self) -> Result<ExpressionValue, ParserError> {
         let value = match self.current_val() {
             TokenValue::KeywordTrue => Ok(true),
             TokenValue::KeywordFalse => Ok(false),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing bool expression"
-            )),
+            _ => Err(ParserError::UnexpectedToken {
+                found: self.current().clone(),
+            }),
         }?;
         self.advance();
         Ok(ExpressionValue::Bool(value))
     }
 
-    fn parse_variable_declaration(&mut self) -> Result<ExpressionValue> {
-        match self.current_val() {
-            TokenValue::KeywordVar => Ok(()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing variable declaration expression"
-            )),
-        }?;
+    fn parse_variable_declaration(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(TokenValueDiscriminants::KeywordVar)?;
         self.advance();
 
         let identifier = match self.current_val() {
             TokenValue::Identifier(v) => Ok(v),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing variable declaration expression"
-            )),
+            _ => Err(ParserError::ExpectedToken {
+                expected: TokenValueDiscriminants::Identifier,
+                found: self.current().clone(),
+            }),
         }?
         .clone();
         self.advance();
 
-        match self.current_val() {
-            TokenValue::EqualSign => Ok(()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing variable declaration expression"
-            )),
-        }?;
+        self.expect_token_discriminant(TokenValueDiscriminants::EqualSign)?;
         self.advance();
 
         Ok(ExpressionValue::VariableDeclaration {
@@ -204,21 +208,17 @@ impl Parser {
         })
     }
 
-    fn parse_call(&mut self) -> Result<ExpressionValue> {
+    fn parse_call(&mut self) -> Result<ExpressionValue, ParserError> {
         let identifier = match self.current_val() {
             TokenValue::Identifier(v) => Ok(v.clone()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing call expression"
-            )),
+            _ => Err(ParserError::ExpectedToken {
+                expected: TokenValueDiscriminants::Identifier,
+                found: self.current().clone(),
+            }),
         }?;
         self.advance();
 
-        match self.current_val() {
-            TokenValue::OpenParenthesis => Ok(()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing call expression"
-            )),
-        }?;
+        self.expect_token_discriminant(TokenValueDiscriminants::OpenParenthesis)?;
         self.advance();
 
         let mut arguments = vec![];
@@ -233,21 +233,11 @@ impl Parser {
         })
     }
 
-    fn parse_function(&mut self) -> Result<ExpressionValue> {
-        match self.current_val() {
-            TokenValue::KeywordFun => Ok(()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing variable function expression"
-            )),
-        }?;
+    fn parse_function(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(TokenValueDiscriminants::KeywordFun)?;
         self.advance();
 
-        match self.current_val() {
-            TokenValue::OpenParenthesis => Ok(()),
-            _ => Err(anyhow!(
-                "unexpected token found while parsing variable function expression"
-            )),
-        }?;
+        self.expect_token_discriminant(TokenValueDiscriminants::OpenParenthesis)?;
         self.advance();
 
         let mut parameters = vec![];
@@ -260,7 +250,11 @@ impl Parser {
                 TokenValue::Identifier(v) => {
                     parameters.push(v.clone());
                 }
-                _ => return Err(anyhow!("unexpected token found in function parameters")),
+                _ => {
+                    return Err(ParserError::UnexpectedToken {
+                        found: self.current().clone(),
+                    })
+                }
             }
             self.advance();
         }
@@ -271,7 +265,7 @@ impl Parser {
         }))
     }
 
-    fn parse_primary(&mut self) -> Result<Expression> {
+    fn parse_primary(&mut self) -> Result<Expression, ParserError> {
         let start = self.current().region.start.clone();
         let value = match self.current_val() {
             TokenValue::Int(_) => self.parse_int(),
@@ -288,12 +282,7 @@ impl Parser {
 
                 let expression = self.parse_expression()?;
 
-                match self.current_val() {
-                    TokenValue::CloseParenthesis => Ok(()),
-                    _ => Err(anyhow!(
-                        "Expected closing parenthesis at end of parenthesis expression"
-                    )),
-                }?;
+                self.expect_token_discriminant(TokenValueDiscriminants::CloseParenthesis)?;
                 self.advance();
 
                 Ok(expression.value)
@@ -304,9 +293,9 @@ impl Parser {
             TokenValue::KeywordReturn => self.parse_return(),
             TokenValue::KeywordVar => self.parse_variable_declaration(),
             TokenValue::KeywordFun => self.parse_function(),
-            _ => Err(anyhow!(
-                "Unexpected token found while parsing primary expression"
-            )),
+            _ => Err(ParserError::UnexpectedToken {
+                found: self.current().clone(),
+            }),
         }?;
         let end = self.previous().region.end.clone();
 
@@ -316,7 +305,7 @@ impl Parser {
         })
     }
 
-    fn parse_multiplicative(&mut self) -> Result<Expression> {
+    fn parse_multiplicative(&mut self) -> Result<Expression, ParserError> {
         let mut left = self.parse_primary()?;
 
         loop {
@@ -347,7 +336,7 @@ impl Parser {
         Ok(left)
     }
 
-    fn parse_additive(&mut self) -> Result<Expression> {
+    fn parse_additive(&mut self) -> Result<Expression, ParserError> {
         let mut left = self.parse_multiplicative()?;
 
         loop {
@@ -377,11 +366,11 @@ impl Parser {
         Ok(left)
     }
 
-    fn parse_expression(&mut self) -> Result<Expression> {
+    fn parse_expression(&mut self) -> Result<Expression, ParserError> {
         self.parse_additive()
     }
 
-    pub fn parse(&mut self) -> Result<Program> {
+    pub fn parse(&mut self) -> Result<Program, ParserError> {
         self.t = 0;
         let mut program: Program = Program { ast: vec![] };
 
