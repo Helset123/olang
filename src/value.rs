@@ -25,7 +25,7 @@ pub enum Exception {
     NestedReturns,
     UndeclaredIdentifier,
     CalledValueIsNotFunction,
-    ValueIsWrongTypeInBinaryOperator,
+    ValueIsWrongType,
 }
 
 #[derive(Error, Debug, Display)]
@@ -42,6 +42,22 @@ impl fmt::Display for Value {
             Value::String(s) => write!(f, "{}", s),
             Value::Function(v) => write!(f, "{:?}", v),
             Value::Null => write!(f, "null"),
+        }
+    }
+}
+
+impl Value {
+    pub fn into_int(&self) -> Result<&i64, ControlFlowValue> {
+        match self {
+            Value::Int(v) => Ok(v),
+            _ => Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
+        }
+    }
+
+    pub fn into_bool(&self) -> Result<&bool, ControlFlowValue> {
+        match self {
+            Value::Bool(v) => Ok(v),
+            _ => Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
         }
     }
 }

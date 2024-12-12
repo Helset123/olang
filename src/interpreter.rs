@@ -23,36 +23,35 @@ pub enum EvalError {
 impl Interpreter {
     fn eval_binary(
         &mut self,
-        left: &Box<Expression>,
+        left_expression: &Box<Expression>,
         operator: &Operator,
-        right: &Box<Expression>,
+        right_expression: &Box<Expression>,
     ) -> Result<Value, ControlFlowValue> {
-        let left_value = self.eval_expression(left)?;
-        let left_int = match left_value {
-            Value::Int(v) => v,
-            _ => {
-                return Err(ControlFlowValue::Exception(
-                    Exception::ValueIsWrongTypeInBinaryOperator,
-                ))
-            }
-        };
-
-        let right_value = self.eval_expression(right)?;
-        let right_int = match right_value {
-            Value::Int(v) => v,
-            _ => {
-                return Err(ControlFlowValue::Exception(
-                    Exception::ValueIsWrongTypeInBinaryOperator,
-                ))
-            }
-        };
+        let left = self.eval_expression(left_expression)?;
+        let right = self.eval_expression(right_expression)?;
 
         Ok(match operator {
-            Operator::Plus => Value::Int(left_int + right_int),
-            Operator::Minus => Value::Int(left_int - right_int),
-            Operator::Multiply => Value::Int(left_int * right_int),
-            Operator::Divide => Value::Int(left_int / right_int),
-            Operator::Modulus => Value::Int(left_int % right_int),
+            Operator::Plus => Value::Int(left.into_int()? + right.into_int()?),
+            Operator::Minus => Value::Int(left.into_int()? - right.into_int()?),
+            Operator::Multiply => Value::Int(left.into_int()? * right.into_int()?),
+            Operator::Divide => Value::Int(left.into_int()? / right.into_int()?),
+            Operator::Modulus => Value::Int(left.into_int()? % right.into_int()?),
+            Operator::IsEqual => match left {
+                Value::Int(left) => Value::Bool(left == *right.into_int()?),
+                Value::Bool(left) => Value::Bool(left == *right.into_bool()?),
+                _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
+            },
+            Operator::IsNotEqual => match left {
+                Value::Int(left) => Value::Bool(left != *right.into_int()?),
+                Value::Bool(left) => Value::Bool(left != *right.into_bool()?),
+                _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
+            },
+            Operator::IsLessThan => Value::Bool(left.into_int()? < right.into_int()?),
+            Operator::IsLessThanOrEqual => Value::Bool(left.into_int()? <= right.into_int()?),
+            Operator::IsGreaterThan => Value::Bool(left.into_int()? > right.into_int()?),
+            Operator::IsGreaterThanOrEqual => Value::Bool(left.into_int()? >= right.into_int()?),
+            Operator::And => Value::Bool(*left.into_bool()? && *right.into_bool()?),
+            Operator::Or => Value::Bool(*left.into_bool()? || *right.into_bool()?),
         })
     }
 
@@ -158,12 +157,24 @@ impl Interpreter {
         }
     }
 
+    fn eval_if(
+        &mut self,
+        test: &Box<Expression>,
+        body: &Vec<Expression>,
+    ) -> Result<Value, ControlFlowValue> {
+        if *self.eval_expression(test)?.into_bool()? {
+            self.eval_block(true, body)?;
+        }
+        Ok(Value::Null)
+    }
+
     fn eval_expression(&mut self, expression: &Expression) -> Result<Value, ControlFlowValue> {
         match &expression.value {
             ExpressionValue::Int(v) => Ok(Value::Int(*v)),
             ExpressionValue::String(v) => Ok(Value::String(v.clone())),
             ExpressionValue::Bool(v) => Ok(Value::Bool(*v)),
             ExpressionValue::Null => Ok(Value::Null),
+            ExpressionValue::If { test, body } => self.eval_if(test, body),
             ExpressionValue::Return(v) => Err(self.eval_return(v)),
             ExpressionValue::Function(v) => Ok(Value::Function(Function::Defined(v.clone()))),
             ExpressionValue::Block(v) => self.eval_block(true, v),

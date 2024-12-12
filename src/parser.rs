@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::lexer::{Lexer, LexerError, Region, Token, TokenValue, TokenValueDiscriminants};
 use strum::{Display, EnumDiscriminants};
 use thiserror::Error;
@@ -19,11 +21,19 @@ pub enum ParserError {
 
 #[derive(Debug, Clone)]
 pub enum Operator {
-    Plus,
-    Minus,
-    Multiply,
-    Divide,
-    Modulus,
+    Plus,                 // +
+    Minus,                // -
+    Multiply,             // *
+    Divide,               // /
+    Modulus,              // %
+    IsLessThan,           // <
+    IsLessThanOrEqual,    // <=
+    IsGreaterThan,        // >
+    IsGreaterThanOrEqual, // >=
+    IsEqual,              // ==
+    IsNotEqual,           // !=
+    And,                  // &&
+    Or,                   // ||
 }
 
 pub type Block = Vec<Expression>;
@@ -57,6 +67,10 @@ pub enum ExpressionValue {
     Call {
         identifier: String,
         arguments: Vec<Expression>,
+    },
+    If {
+        test: Box<Expression>,
+        body: Block,
     },
 }
 
@@ -313,6 +327,22 @@ impl Parser {
         }))
     }
 
+    fn parse_if(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::If,
+            TokenValueDiscriminants::KeywordIf,
+        )?;
+        self.advance();
+
+        let test = self.parse_expression()?;
+        let body = self.parse_block()?;
+
+        Ok(ExpressionValue::If {
+            test: Box::new(test),
+            body,
+        })
+    }
+
     fn parse_primary(&mut self) -> Result<Expression, ParserError> {
         let start = self.current().region.start.clone();
         let value = match self.current_val() {
@@ -344,6 +374,7 @@ impl Parser {
             TokenValue::KeywordReturn => self.parse_return(),
             TokenValue::KeywordVar => self.parse_variable_declaration(),
             TokenValue::KeywordFun => self.parse_function(),
+            TokenValue::KeywordIf => self.parse_if(),
             _ => Err(ParserError::UnexpectedToken {
                 while_parsing: None,
                 found: self.current().clone(),
@@ -418,8 +449,72 @@ impl Parser {
         Ok(left)
     }
 
+    fn parse_comparative(&mut self) -> Result<Expression, ParserError> {
+        let mut left = self.parse_additive()?;
+
+        loop {
+            let operator = match self.current_val() {
+                TokenValue::IsEqual => Operator::IsEqual,
+                TokenValue::IsNotEqual => Operator::IsNotEqual,
+                TokenValue::IsGreaterThan => Operator::IsGreaterThan,
+                TokenValue::IsGreaterThanOrEqual => Operator::IsGreaterThanOrEqual,
+                TokenValue::IsLessThan => Operator::IsLessThan,
+                TokenValue::IsLessThanOrEqual => Operator::IsLessThanOrEqual,
+                _ => {
+                    break;
+                }
+            };
+            self.advance();
+
+            let right = self.parse_additive()?;
+            left = Expression {
+                region: Region {
+                    start: left.region.start.clone(),
+                    end: right.region.end.clone(),
+                },
+                value: ExpressionValue::Binary {
+                    left: Box::new(left),
+                    operator,
+                    right: Box::new(right),
+                },
+            }
+        }
+
+        Ok(left)
+    }
+
+    fn parse_logical(&mut self) -> Result<Expression, ParserError> {
+        let mut left = self.parse_comparative()?;
+
+        loop {
+            let operator = match self.current_val() {
+                TokenValue::And => Operator::And,
+                TokenValue::Or => Operator::Or,
+                _ => {
+                    break;
+                }
+            };
+            self.advance();
+
+            let right = self.parse_comparative()?;
+            left = Expression {
+                region: Region {
+                    start: left.region.start.clone(),
+                    end: right.region.end.clone(),
+                },
+                value: ExpressionValue::Binary {
+                    left: Box::new(left),
+                    operator,
+                    right: Box::new(right),
+                },
+            }
+        }
+
+        Ok(left)
+    }
+
     fn parse_expression(&mut self) -> Result<Expression, ParserError> {
-        self.parse_additive()
+        self.parse_logical()
     }
 
     pub fn parse(&mut self) -> Result<Program, ParserError> {

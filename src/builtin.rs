@@ -11,7 +11,12 @@ fn expect_num_of_argumets(arguments: &Vec<Value>, num: usize) -> Result<(), Cont
 }
 
 pub fn print_ln(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
-    println!("{:?}", arguments);
+    let mut result = String::new();
+    for arg in arguments.iter() {
+        result.push_str(format!("{}", arg).as_str())
+    }
+
+    println!("{}", result);
     Ok(Value::Null)
 }
 

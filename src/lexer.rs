@@ -1,30 +1,51 @@
+use phf::phf_map;
 use std::{fmt, string::String, vec::Vec};
 use strum::{Display, EnumDiscriminants};
 use thiserror::Error;
 
+static KEYWORDS: phf::Map<&'static str, TokenValue> = phf_map! {
+    "return" => TokenValue::KeywordReturn,
+    "fun" => TokenValue::KeywordFun,
+    "true" => TokenValue::KeywordTrue,
+    "false" => TokenValue::KeywordFalse,
+    "null" => TokenValue::KeywordNull,
+    "var" => TokenValue::KeywordVar,
+    "if" => TokenValue::KeywordIf
+};
+
 #[derive(EnumDiscriminants, Display, Debug, PartialEq, Clone)]
 #[strum_discriminants(derive(Display))]
 pub enum TokenValue {
-    KeywordReturn,      // return
-    KeywordFun,         // fun
-    KeywordTrue,        // true
-    KeywordFalse,       // false
-    KeywordNull,        // null
-    KeywordVar,         // var
-    EqualSign,          // =
-    CloseParenthesis,   // )
-    OpenParenthesis,    // (
-    OpenBrace,          // {
-    CloseBrace,         // }
-    PlusSign,           // +
-    MinusSign,          // -
-    DivisionSign,       // /
-    MultiplicationSign, // *
-    ModuloSign,         // %
-    EndOfFile,          // EOF
-    Identifier(String), // print
-    String(String),     // "Hello World"
-    Int(i64),           // 100
+    KeywordReturn,        // return
+    KeywordFun,           // fun
+    KeywordTrue,          // true
+    KeywordFalse,         // false
+    KeywordNull,          // null
+    KeywordVar,           // var
+    KeywordIf,            // if
+    EqualSign,            // =
+    CloseParenthesis,     // )
+    OpenParenthesis,      // (
+    OpenBrace,            // {
+    CloseBrace,           // }
+    PlusSign,             // +
+    MinusSign,            // -
+    DivisionSign,         // /
+    MultiplicationSign,   // *
+    ExponentSign,         // **
+    ModuloSign,           // %
+    EndOfFile,            // EOF
+    Identifier(String),   // print
+    String(String),       // "Hello World"
+    Int(i64),             // 100
+    IsLessThan,           // <
+    IsLessThanOrEqual,    // <=
+    IsGreaterThan,        // >
+    IsGreaterThanOrEqual, // >=
+    IsEqual,              // ==
+    IsNotEqual,           // !=
+    And,                  // &&
+    Or,                   // ||
 }
 
 #[derive(Debug, Clone)]
@@ -122,6 +143,13 @@ impl Lexer {
         self.source[self.c]
     }
 
+    fn next_or_space(&self) -> &char {
+        match self.source.get(self.c + 1) {
+            Some(v) => v,
+            None => &' ',
+        }
+    }
+
     pub fn tokenize(&mut self) -> Result<Vec<Token>, LexerError> {
         let mut result: Vec<Token> = vec![];
         self.c = 0;
@@ -140,12 +168,59 @@ impl Lexer {
                 ')' => Some(TokenValue::CloseParenthesis),
                 '{' => Some(TokenValue::OpenBrace),
                 '}' => Some(TokenValue::CloseBrace),
-                '=' => Some(TokenValue::EqualSign),
                 '+' => Some(TokenValue::PlusSign),
                 '-' => Some(TokenValue::MinusSign),
-                '*' => Some(TokenValue::MultiplicationSign),
                 '/' => Some(TokenValue::DivisionSign),
                 '%' => Some(TokenValue::ModuloSign),
+                '*' => match self.next_or_space() {
+                    '*' => {
+                        self.advance();
+                        Some(TokenValue::ExponentSign)
+                    }
+                    _ => Some(TokenValue::MultiplicationSign),
+                },
+                '&' => match self.next_or_space() {
+                    '&' => {
+                        self.advance();
+                        Some(TokenValue::And)
+                    }
+                    _ => None,
+                },
+                '|' => match self.next_or_space() {
+                    '|' => {
+                        self.advance();
+                        Some(TokenValue::Or)
+                    }
+                    _ => None,
+                },
+                '!' => match self.next_or_space() {
+                    '=' => {
+                        self.advance();
+                        Some(TokenValue::IsNotEqual)
+                    }
+                    _ => None,
+                },
+                '=' => match self.next_or_space() {
+                    '=' => {
+                        self.advance();
+                        Some(TokenValue::IsEqual)
+                    }
+                    _ => Some(TokenValue::EqualSign),
+                },
+                '<' => match self.next_or_space() {
+                    '=' => {
+                        self.advance();
+                        Some(TokenValue::IsLessThanOrEqual)
+                    }
+                    _ => Some(TokenValue::IsLessThan),
+                },
+                '>' => match self.next_or_space() {
+                    '=' => {
+                        self.advance();
+                        Some(TokenValue::IsGreaterThanOrEqual)
+                    }
+                    _ => Some(TokenValue::IsGreaterThan),
+                },
                 _ => None,
             } {
                 Some(v) => {
@@ -214,17 +289,12 @@ impl Lexer {
                 }
 
                 region.end = self.current_location();
-                // check if this matches any keywords
+
                 result.push(Token::new(
                     region,
-                    match value.as_str() {
-                        "fun" => TokenValue::KeywordFun,
-                        "return" => TokenValue::KeywordReturn,
-                        "true" => TokenValue::KeywordTrue,
-                        "false" => TokenValue::KeywordFalse,
-                        "null" => TokenValue::KeywordNull,
-                        "var" => TokenValue::KeywordVar,
-                        _ => TokenValue::Identifier(value),
+                    match KEYWORDS.get(value.as_str()) {
+                        Some(v) => v.clone(),
+                        None => TokenValue::Identifier(value),
                     },
                 ))
             } else {
