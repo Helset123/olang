@@ -26,6 +26,7 @@ impl fmt::Display for Value {
             Value::Int(i) => write!(f, "{}", i),
             Value::String(s) => write!(f, "{}", s),
             Value::Function(v) => write!(f, "{:?}", v),
+            Value::SystemException(v) => write!(f, "{}", v),
             _ => Err(fmt::Error),
         }
     }

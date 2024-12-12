@@ -1,12 +1,23 @@
 use crate::{
     environment::Environment,
-    parser::{Block, Expression, ExpressionValue, Operator, Parser},
+    lexer::LexerError,
+    parser::{Block, Expression, ExpressionValue, Operator, Parser, ParserError},
     value::{Function, Value},
 };
-use anyhow::{anyhow, Result};
+use thiserror::Error;
 
 pub struct Interpreter {
     environment: Environment,
+}
+
+#[derive(Error, Debug)]
+pub enum EvalError {
+    #[error("Unhandeled exception: {0}")]
+    UnhandeledException(Value),
+    #[error(transparent)]
+    Parser(#[from] ParserError),
+    #[error(transparent)]
+    Lexer(#[from] LexerError),
 }
 
 impl Interpreter {
@@ -168,7 +179,7 @@ impl Interpreter {
         }
     }
 
-    pub fn eval(&mut self, source: &String) -> Result<Value> {
+    pub fn eval(&mut self, source: &String) -> Result<Value, EvalError> {
         let program = Parser::new(source)?.parse()?;
         let mut result = Value::Null;
 
@@ -179,7 +190,9 @@ impl Interpreter {
                     result = *v;
                     break;
                 }
-                Value::SystemException(v) => return Err(anyhow!("Unhandeled exception: {}", v)),
+                Value::SystemException(_) => {
+                    return Err(EvalError::UnhandeledException(value.clone()))
+                }
                 _ => {}
             }
         }
