@@ -23,11 +23,11 @@ pub enum EvalError {
 impl Interpreter {
     fn eval_binary(
         &mut self,
-        left: Box<Expression>,
-        operator: Operator,
-        right: Box<Expression>,
+        left: &Box<Expression>,
+        operator: &Operator,
+        right: &Box<Expression>,
     ) -> Result<Value, ControlFlowValue> {
-        let left_value = self.eval_expression(*left)?;
+        let left_value = self.eval_expression(left)?;
         let left_int = match left_value {
             Value::Int(v) => v,
             _ => {
@@ -37,7 +37,7 @@ impl Interpreter {
             }
         };
 
-        let right_value = self.eval_expression(*right)?;
+        let right_value = self.eval_expression(right)?;
         let right_int = match right_value {
             Value::Int(v) => v,
             _ => {
@@ -59,7 +59,7 @@ impl Interpreter {
     fn eval_block(
         &mut self,
         private_environment: bool,
-        block: Block,
+        block: &Block,
     ) -> Result<Value, ControlFlowValue> {
         if private_environment {
             self.environment.push();
@@ -76,8 +76,8 @@ impl Interpreter {
         Ok(Value::Null)
     }
 
-    fn eval_identifier(&mut self, id: String) -> Result<Value, ControlFlowValue> {
-        match self.environment.get(&id) {
+    fn eval_identifier(&mut self, id: &String) -> Result<Value, ControlFlowValue> {
+        match self.environment.get(id) {
             Some(v) => Ok(v),
             None => Err(ControlFlowValue::Exception(Exception::UndeclaredIdentifier)),
         }
@@ -85,11 +85,11 @@ impl Interpreter {
 
     fn eval_call(
         &mut self,
-        id: String,
-        arguments: Vec<Expression>,
+        id: &String,
+        arguments: &Vec<Expression>,
     ) -> Result<Value, ControlFlowValue> {
-        let function_value = match self.environment.get(&id) {
-            Some(v) => v.clone(),
+        let function_value = match self.environment.get(id) {
+            Some(v) => v,
             _ => return Err(ControlFlowValue::Exception(Exception::UndeclaredIdentifier)),
         };
 
@@ -97,7 +97,7 @@ impl Interpreter {
             Value::Function(function) => {
                 let mut evaluated_arguments = vec![];
                 for argument in arguments.iter() {
-                    evaluated_arguments.push(self.eval_expression(argument.clone())?)
+                    evaluated_arguments.push(self.eval_expression(argument)?)
                 }
 
                 match function {
@@ -116,7 +116,7 @@ impl Interpreter {
                                 .declare(parameter.clone(), evaluated_arguments[i].clone());
                         }
 
-                        let result = match self.eval_block(false, defined.body) {
+                        let result = match self.eval_block(false, &defined.body) {
                             Ok(_) => Ok(Value::Null),
                             Err(err) => match err {
                                 ControlFlowValue::Return(v) => Ok(v),
@@ -138,16 +138,16 @@ impl Interpreter {
 
     fn eval_declare_variable(
         &mut self,
-        id: String,
-        expression: Box<Expression>,
+        id: &String,
+        expression: &Box<Expression>,
     ) -> Result<Value, ControlFlowValue> {
-        let value = self.eval_expression(*expression)?;
-        self.environment.declare(id, value);
+        let value = self.eval_expression(expression)?;
+        self.environment.declare(id.clone(), value);
         Ok(Value::Null)
     }
 
-    fn eval_return(&mut self, expression: Box<Expression>) -> ControlFlowValue {
-        match self.eval_expression(*expression) {
+    fn eval_return(&mut self, expression: &Box<Expression>) -> ControlFlowValue {
+        match self.eval_expression(expression) {
             Ok(v) => ControlFlowValue::Return(v),
             Err(v) => match v {
                 ControlFlowValue::Return(_) => {
@@ -158,14 +158,14 @@ impl Interpreter {
         }
     }
 
-    fn eval_expression(&mut self, expression: Expression) -> Result<Value, ControlFlowValue> {
-        match expression.value {
-            ExpressionValue::Int(v) => Ok(Value::Int(v)),
-            ExpressionValue::String(v) => Ok(Value::String(v)),
-            ExpressionValue::Bool(v) => Ok(Value::Bool(v)),
+    fn eval_expression(&mut self, expression: &Expression) -> Result<Value, ControlFlowValue> {
+        match &expression.value {
+            ExpressionValue::Int(v) => Ok(Value::Int(*v)),
+            ExpressionValue::String(v) => Ok(Value::String(v.clone())),
+            ExpressionValue::Bool(v) => Ok(Value::Bool(*v)),
             ExpressionValue::Null => Ok(Value::Null),
             ExpressionValue::Return(v) => Err(self.eval_return(v)),
-            ExpressionValue::Function(v) => Ok(Value::Function(Function::Defined(v))),
+            ExpressionValue::Function(v) => Ok(Value::Function(Function::Defined(v.clone()))),
             ExpressionValue::Block(v) => self.eval_block(true, v),
             ExpressionValue::Identifier(id) => self.eval_identifier(id),
             ExpressionValue::Call {
@@ -195,7 +195,7 @@ impl Interpreter {
         let mut result = Value::Null;
 
         for expression in program.ast {
-            match self.eval_expression(expression) {
+            match self.eval_expression(&expression) {
                 Ok(_) => Ok(Value::Null),
                 Err(err) => match err {
                     ControlFlowValue::Return(v) => {
