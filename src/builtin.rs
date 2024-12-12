@@ -1,15 +1,21 @@
-use crate::value::Value;
+use crate::value::{ControlFlowValue, Exception, Value};
 
-pub fn print_ln(arguments: Vec<Value>) -> Value {
-    println!("{:?}", arguments);
-    Value::Null
+fn expect_num_of_argumets(arguments: &Vec<Value>, num: usize) -> Result<(), ControlFlowValue> {
+    if arguments.len() != num {
+        Err(ControlFlowValue::Exception(
+            Exception::WrongNumberOfArguments,
+        ))
+    } else {
+        Ok(())
+    }
 }
 
-pub fn to_string(arguments: Vec<Value>) -> Value {
-    if arguments.len() != 1 {
-        // FIXME: this is one of the reasons that systemexception should be an enum, this repeats what is found for defined functions in Interpreter::eval_call
-        return Value::SystemException("Wrong number of arguments".to_string());
-    }
+pub fn print_ln(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
+    println!("{:?}", arguments);
+    Ok(Value::Null)
+}
 
-    Value::String(format!("{}", arguments.first().unwrap()))
+pub fn to_string(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
+    expect_num_of_argumets(&arguments, 1)?;
+    Ok(Value::String(format!("{}", arguments.first().unwrap())))
 }

@@ -1,5 +1,5 @@
 use crate::builtin::*;
-use crate::value::{Function, Value};
+use crate::value::{ControlFlowValue, Function, Value};
 use std::collections::HashMap;
 
 pub struct Environment {
@@ -42,7 +42,11 @@ impl Environment {
         self
     }
 
-    fn declare_builtin(&mut self, id: String, function: fn(Vec<Value>) -> Value) -> &mut Self {
+    fn declare_builtin(
+        &mut self,
+        id: String,
+        function: fn(Vec<Value>) -> Result<Value, ControlFlowValue>,
+    ) -> &mut Self {
         self.declare(id, Value::Function(Function::Builtin(function)));
         self
     }
