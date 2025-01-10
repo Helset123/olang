@@ -123,7 +123,7 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    pub fn new(source: &String) -> Lexer {
+    pub fn new(source: &str) -> Lexer {
         Lexer {
             source: source.chars().collect(),
             c: 0,

@@ -216,7 +216,7 @@ impl Interpreter {
         }
     }
 
-    pub fn eval(&mut self, source: &String) -> Result<Value, EvalError> {
+    pub fn eval(&mut self, source: &str) -> Result<Value, EvalError> {
         let program = Parser::new(source)?.parse()?;
         let mut result = Value::Null;
 

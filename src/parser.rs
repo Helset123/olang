@@ -103,7 +103,7 @@ pub struct Parser {
 }
 
 impl Parser {
-    pub fn new(source: &String) -> Result<Parser, LexerError> {
+    pub fn new(source: &str) -> Result<Parser, LexerError> {
         Ok(Parser {
             tokens: Lexer::new(source).tokenize()?,
             t: 0,

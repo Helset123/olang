@@ -1,5 +1,6 @@
-use crate::parser::Parser;
 use anyhow::Result;
+use interpreter::EvalError;
+use value::Value;
 
 use std::fs;
 
@@ -10,10 +11,17 @@ mod lexer;
 mod parser;
 mod value;
 
+#[cfg(test)]
+mod tests;
+
+fn eval(source: &str) -> Result<Value, EvalError> {
+    interpreter::Interpreter::new().eval(source)
+}
+
 fn main() -> Result<()> {
     let source = fs::read_to_string("source.olang")?;
 
     // println!("AST: {:#?}", Parser::new(&source)?.parse()?);
-    interpreter::Interpreter::new().eval(&source)?;
+    eval(source.as_str())?;
     Ok(())
 }
