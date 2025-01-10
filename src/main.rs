@@ -14,7 +14,7 @@ mod value;
 #[cfg(test)]
 mod tests;
 
-fn eval(source: &str) -> Result<Value, EvalError> {
+pub fn eval(source: &str) -> Result<Value, EvalError> {
     interpreter::Interpreter::new().eval(source)
 }
 

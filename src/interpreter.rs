@@ -222,7 +222,7 @@ impl Interpreter {
 
         for expression in program.ast {
             match self.eval_expression(&expression) {
-                Ok(v) => Ok(v),
+                Ok(v) => Ok(result = v),
                 Err(err) => match err {
                     ControlFlowValue::Exception(e) => Err(EvalError::UnhandledException(e)),
                 },

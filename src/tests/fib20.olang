@@ -12,4 +12,4 @@ var f = fun(n) {
     result
 }
 
-printLn(f(20))
+f(20)
