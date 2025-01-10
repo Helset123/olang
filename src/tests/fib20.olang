@@ -1,15 +1,11 @@
 var f = fun(n) {
-    var result = 0
     if n <= 0 {
-        result = 0
+        0
+    } elif n == 1 {
+        1
+    } else {
+        f(n-1) + f(n-2)
     }
-    if n == 1 {
-        result = 1
-    }
-    if n > 1 {
-        result = f(n-1) + f(n-2)
-    }
-    result
 }
 
 f(20)

@@ -1,7 +1,7 @@
 use crate::{
     environment::Environment,
     lexer::LexerError,
-    parser::{Block, Expression, ExpressionValue, Operator, Parser, ParserError},
+    parser::{Block, Expression, ExpressionValue, IfClause, Operator, Parser, ParserError},
     value::{ControlFlowValue, Exception, Function, Value},
 };
 use thiserror::Error;
@@ -144,13 +144,28 @@ impl Interpreter {
 
     fn eval_if(
         &mut self,
-        test: &Box<Expression>,
-        body: &Vec<Expression>,
+        clauses: &Vec<IfClause>,
+        else_block: &Option<Block>,
     ) -> Result<Value, ControlFlowValue> {
-        if *self.eval_expression(test)?.into_bool()? {
-            self.eval_block(true, body)?;
+        let mut run_else_block = true;
+        let mut result = Value::Null;
+
+        for clause in clauses {
+            let test_value = self.eval_expression(clause.test.as_ref())?;
+            if *test_value.into_bool()? {
+                result = self.eval_block(true, &clause.body)?;
+                run_else_block = false;
+                break;
+            }
         }
-        Ok(Value::Null)
+
+        if run_else_block {
+            if let Some(block) = else_block {
+                result = self.eval_block(true, &block)?;
+            }
+        }
+
+        Ok(result)
     }
 
     fn eval_assign(
@@ -169,14 +184,16 @@ impl Interpreter {
         test: &Expression,
         body: &Vec<Expression>,
     ) -> Result<Value, ControlFlowValue> {
+        let mut result = Value::Null;
+
         loop {
             if !*self.eval_expression(test)?.into_bool()? {
                 break;
             }
-            self.eval_block(true, body)?;
+            result = self.eval_block(true, body)?;
         }
 
-        Ok(Value::Null)
+        Ok(result)
     }
 
     fn eval_expression(&mut self, expression: &Expression) -> Result<Value, ControlFlowValue> {
@@ -185,7 +202,10 @@ impl Interpreter {
             ExpressionValue::String(v) => Ok(Value::String(v.clone())),
             ExpressionValue::Bool(v) => Ok(Value::Bool(*v)),
             ExpressionValue::Null => Ok(Value::Null),
-            ExpressionValue::If { test, body } => self.eval_if(test, body),
+            ExpressionValue::If {
+                clauses,
+                else_block,
+            } => self.eval_if(clauses, else_block),
             ExpressionValue::While { test, body } => self.eval_while(test, body),
             ExpressionValue::Function(v) => Ok(Value::Function(Function::Defined(v.clone()))),
             ExpressionValue::Block(v) => self.eval_block(true, v),

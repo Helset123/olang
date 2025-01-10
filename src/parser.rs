@@ -43,6 +43,12 @@ pub struct DefinedFunction {
     pub body: Block,
 }
 
+#[derive(Debug, Clone)]
+pub struct IfClause {
+    pub test: Box<Expression>,
+    pub body: Vec<Expression>,
+}
+
 #[derive(Debug, Clone, EnumDiscriminants)]
 #[strum_discriminants(derive(Display))]
 pub enum ExpressionValue {
@@ -71,8 +77,8 @@ pub enum ExpressionValue {
         arguments: Vec<Expression>,
     },
     If {
-        test: Box<Expression>,
-        body: Block,
+        clauses: Vec<IfClause>,
+        else_block: Option<Block>,
     },
     While {
         test: Box<Expression>,
@@ -336,12 +342,40 @@ impl Parser {
         )?;
         self.advance();
 
-        let test = self.parse_expression()?;
-        let body = self.parse_block()?;
+        // parse the first if
+        let first_test = self.parse_expression()?;
+        let first_body = self.parse_block()?;
+        let mut clauses = vec![IfClause {
+            test: Box::new(first_test),
+            body: first_body,
+        }];
+
+        // parse any amount of elifs
+        while self.current_val() == &TokenValue::KeywordElif {
+            self.advance();
+
+            let test = self.parse_expression()?;
+            let body = self.parse_block()?;
+
+            clauses.push(IfClause {
+                test: Box::new(test),
+                body,
+            })
+        }
+
+        let mut else_block = None;
+        match self.current_val() {
+            TokenValue::KeywordElse => {
+                // parse the else block
+                self.advance();
+                else_block = Some(self.parse_block()?);
+            }
+            _ => {}
+        }
 
         Ok(ExpressionValue::If {
-            test: Box::new(test),
-            body,
+            clauses,
+            else_block,
         })
     }
 
