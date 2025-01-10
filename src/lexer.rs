@@ -4,7 +4,6 @@ use strum::{Display, EnumDiscriminants};
 use thiserror::Error;
 
 static KEYWORDS: phf::Map<&'static str, TokenValue> = phf_map! {
-    "return" => TokenValue::KeywordReturn,
     "fun" => TokenValue::KeywordFun,
     "true" => TokenValue::KeywordTrue,
     "false" => TokenValue::KeywordFalse,
@@ -17,7 +16,6 @@ static KEYWORDS: phf::Map<&'static str, TokenValue> = phf_map! {
 #[derive(EnumDiscriminants, Display, Debug, PartialEq, Clone)]
 #[strum_discriminants(derive(Display))]
 pub enum TokenValue {
-    KeywordReturn,        // return
     KeywordFun,           // fun
     KeywordTrue,          // true
     KeywordFalse,         // false

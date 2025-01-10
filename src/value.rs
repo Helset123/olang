@@ -39,7 +39,6 @@ pub enum Exception {
 
 #[derive(Error, Debug, Display)]
 pub enum ControlFlowValue {
-    Return(Value),
     Exception(Exception),
 }
 
