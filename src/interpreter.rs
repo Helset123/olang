@@ -164,6 +164,21 @@ impl Interpreter {
         Ok(Value::Null)
     }
 
+    fn eval_while(
+        &mut self,
+        test: &Expression,
+        body: &Vec<Expression>,
+    ) -> Result<Value, ControlFlowValue> {
+        loop {
+            if !*self.eval_expression(test)?.into_bool()? {
+                break;
+            }
+            self.eval_block(true, body)?;
+        }
+
+        Ok(Value::Null)
+    }
+
     fn eval_expression(&mut self, expression: &Expression) -> Result<Value, ControlFlowValue> {
         match &expression.value {
             ExpressionValue::Int(v) => Ok(Value::Int(*v)),
@@ -209,8 +224,7 @@ impl Interpreter {
             match self.eval_expression(&expression) {
                 Ok(v) => Ok(v),
                 Err(err) => match err {
-                    ControlFlowValue::Exception(e) => Err(EvalError::UnhandeledException(e)),
-
+                    ControlFlowValue::Exception(e) => Err(EvalError::UnhandledException(e)),
                 },
             }?;
         }

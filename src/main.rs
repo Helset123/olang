@@ -13,7 +13,7 @@ mod value;
 fn main() -> Result<()> {
     let source = fs::read_to_string("source.olang")?;
 
-    println!("AST: {:#?}", Parser::new(&source)?.parse()?);
+    // println!("AST: {:#?}", Parser::new(&source)?.parse()?);
     interpreter::Interpreter::new().eval(&source)?;
     Ok(())
 }

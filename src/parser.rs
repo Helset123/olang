@@ -1,4 +1,5 @@
 use crate::lexer::{Lexer, LexerError, Region, Token, TokenValue, TokenValueDiscriminants};
+use std::fmt;
 use strum::{Display, EnumDiscriminants};
 use thiserror::Error;
 
@@ -344,6 +345,18 @@ impl Parser {
         })
     }
 
+    fn parse_while(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::While,
+            TokenValueDiscriminants::KeywordWhile,
+        )?;
+        self.advance();
+
+        let test = Box::new(self.parse_expression()?);
+        let body = self.parse_block()?;
+
+        Ok(ExpressionValue::While { test, body })
+    }
 
     fn parse_assign(&mut self) -> Result<ExpressionValue, ParserError> {
         let identifier = match self.current_val() {
