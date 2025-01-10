@@ -12,8 +12,8 @@ pub struct Interpreter {
 
 #[derive(Error, Debug)]
 pub enum EvalError {
-    #[error("Unhandeled exception: {0}")]
-    UnhandeledException(Exception),
+    #[error("Unhandled exception: {0}")]
+    UnhandledException(Exception),
     #[error(transparent)]
     Parser(#[from] ParserError),
     #[error(transparent)]
@@ -30,17 +30,19 @@ impl Interpreter {
         let left = self.eval_expression(left_expression)?;
         let right = self.eval_expression(right_expression)?;
 
+        // FIXME: utilize the Eq trait instead of this garbage
         Ok(match operator {
             Operator::Plus => Value::Int(left.into_int()? + right.into_int()?),
             Operator::Minus => Value::Int(left.into_int()? - right.into_int()?),
             Operator::Multiply => Value::Int(left.into_int()? * right.into_int()?),
             Operator::Divide => Value::Int(left.into_int()? / right.into_int()?),
             Operator::Modulus => Value::Int(left.into_int()? % right.into_int()?),
-            Operator::IsEqual => match left {
-                Value::Int(left) => Value::Bool(left == *right.into_int()?),
-                Value::Bool(left) => Value::Bool(left == *right.into_bool()?),
-                _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
-            },
+            Operator::IsEqual => Value::Bool(left == right),
+            // Operator::IsEqual => match left {
+            //     Value::Int(left) => Value::Bool(left == *right.into_int()?),
+            //     Value::Bool(left) => Value::Bool(left == *right.into_bool()?),
+            //     _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
+            // },
             Operator::IsNotEqual => match left {
                 Value::Int(left) => Value::Bool(left != *right.into_int()?),
                 Value::Bool(left) => Value::Bool(left != *right.into_bool()?),
@@ -158,6 +160,7 @@ impl Interpreter {
     ) -> Result<Value, ControlFlowValue> {
         let value = self.eval_expression(expression)?;
         self.environment.assign(id.as_str(), value)?;
+
         Ok(Value::Null)
     }
 
@@ -168,6 +171,7 @@ impl Interpreter {
             ExpressionValue::Bool(v) => Ok(Value::Bool(*v)),
             ExpressionValue::Null => Ok(Value::Null),
             ExpressionValue::If { test, body } => self.eval_if(test, body),
+            ExpressionValue::While { test, body } => self.eval_while(test, body),
             ExpressionValue::Function(v) => Ok(Value::Function(Function::Defined(v.clone()))),
             ExpressionValue::Block(v) => self.eval_block(true, v),
             ExpressionValue::Identifier(id) => self.eval_identifier(id),
@@ -203,9 +207,10 @@ impl Interpreter {
 
         for expression in program.ast {
             match self.eval_expression(&expression) {
-                Ok(_) => Ok(Value::Null),
+                Ok(v) => Ok(v),
                 Err(err) => match err {
                     ControlFlowValue::Exception(e) => Err(EvalError::UnhandeledException(e)),
+
                 },
             }?;
         }
