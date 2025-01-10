@@ -12,8 +12,8 @@ pub struct Interpreter {
 
 #[derive(Error, Debug)]
 pub enum EvalError {
-    #[error("Unhandeled exception: {0}")]
-    UnhandeledException(Exception),
+    #[error("Unhandled exception: {0}")]
+    UnhandledException(Exception),
     #[error(transparent)]
     Parser(#[from] ParserError),
     #[error(transparent)]
@@ -30,17 +30,19 @@ impl Interpreter {
         let left = self.eval_expression(left_expression)?;
         let right = self.eval_expression(right_expression)?;
 
+        // FIXME: utilize the Eq trait instead of this garbage
         Ok(match operator {
             Operator::Plus => Value::Int(left.into_int()? + right.into_int()?),
             Operator::Minus => Value::Int(left.into_int()? - right.into_int()?),
             Operator::Multiply => Value::Int(left.into_int()? * right.into_int()?),
             Operator::Divide => Value::Int(left.into_int()? / right.into_int()?),
             Operator::Modulus => Value::Int(left.into_int()? % right.into_int()?),
-            Operator::IsEqual => match left {
-                Value::Int(left) => Value::Bool(left == *right.into_int()?),
-                Value::Bool(left) => Value::Bool(left == *right.into_bool()?),
-                _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
-            },
+            Operator::IsEqual => Value::Bool(left == right),
+            // Operator::IsEqual => match left {
+            //     Value::Int(left) => Value::Bool(left == *right.into_int()?),
+            //     Value::Bool(left) => Value::Bool(left == *right.into_bool()?),
+            //     _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
+            // },
             Operator::IsNotEqual => match left {
                 Value::Int(left) => Value::Bool(left != *right.into_int()?),
                 Value::Bool(left) => Value::Bool(left != *right.into_bool()?),
@@ -168,6 +170,17 @@ impl Interpreter {
         Ok(Value::Null)
     }
 
+    fn eval_while(
+        &mut self,
+        test: &Box<Expression>,
+        body: &Vec<Expression>,
+    ) -> Result<Value, ControlFlowValue> {
+        while *self.eval_expression(test)?.into_bool()? {
+            self.eval_block(true, body)?;
+        }
+        Ok(Value::Null)
+    }
+
     fn eval_expression(&mut self, expression: &Expression) -> Result<Value, ControlFlowValue> {
         match &expression.value {
             ExpressionValue::Int(v) => Ok(Value::Int(*v)),
@@ -175,6 +188,7 @@ impl Interpreter {
             ExpressionValue::Bool(v) => Ok(Value::Bool(*v)),
             ExpressionValue::Null => Ok(Value::Null),
             ExpressionValue::If { test, body } => self.eval_if(test, body),
+            ExpressionValue::While { test, body } => self.eval_while(test, body),
             ExpressionValue::Return(v) => Err(self.eval_return(v)),
             ExpressionValue::Function(v) => Ok(Value::Function(Function::Defined(v.clone()))),
             ExpressionValue::Block(v) => self.eval_block(true, v),
@@ -207,13 +221,13 @@ impl Interpreter {
 
         for expression in program.ast {
             match self.eval_expression(&expression) {
-                Ok(_) => Ok(Value::Null),
+                Ok(v) => Ok(v),
                 Err(err) => match err {
                     ControlFlowValue::Return(v) => {
                         result = v;
                         break;
                     }
-                    ControlFlowValue::Exception(e) => Err(EvalError::UnhandeledException(e)),
+                    ControlFlowValue::Exception(e) => Err(EvalError::UnhandledException(e)),
                 },
             }?;
         }

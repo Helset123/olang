@@ -72,9 +72,19 @@ pub enum ExpressionValue {
         test: Box<Expression>,
         body: Block,
     },
+    While {
+        test: Box<Expression>,
+        body: Block,
+    },
 }
 
-#[derive(Debug, Clone)]
+impl fmt::Debug for Expression {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:#?}", self.value)
+    }
+}
+
+#[derive(Clone)]
 pub struct Expression {
     region: Region,
     pub value: ExpressionValue,
@@ -343,6 +353,22 @@ impl Parser {
         })
     }
 
+    fn parse_while(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::While,
+            TokenValueDiscriminants::KeywordWhile,
+        )?;
+        self.advance();
+
+        let test = self.parse_expression()?;
+        let body = self.parse_block()?;
+
+        Ok(ExpressionValue::While {
+            test: Box::new(test),
+            body,
+        })
+    }
+
     fn parse_primary(&mut self) -> Result<Expression, ParserError> {
         let start = self.current().region.start.clone();
         let value = match self.current_val() {
@@ -375,6 +401,7 @@ impl Parser {
             TokenValue::KeywordVar => self.parse_variable_declaration(),
             TokenValue::KeywordFun => self.parse_function(),
             TokenValue::KeywordIf => self.parse_if(),
+            TokenValue::KeywordWhile => self.parse_while(),
             _ => Err(ParserError::UnexpectedToken {
                 while_parsing: None,
                 found: self.current().clone(),

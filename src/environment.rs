@@ -2,6 +2,7 @@ use crate::builtin::*;
 use crate::value::{ControlFlowValue, Function, Value};
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct Environment {
     scopes: Vec<HashMap<String, Value>>,
 }

@@ -1,0 +1,1021 @@
+   Compiling olang v0.1.0 (/home/otto/Projects2/rust/olang)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.44s
+     Running `target/debug/olang`
+[src/interpreter.rs:210:9] &expression = Function(
+    DefinedFunction {
+        parameters: [
+            "n",
+        ],
+        body: [
+            If {
+                test: Binary {
+                    left: Identifier(
+                        "n",
+                    ),
+                    operator: IsLessThanOrEqual,
+                    right: Int(
+                        0,
+                    ),
+                },
+                body: [
+                    Return(
+                        Int(
+                            0,
+                        ),
+                    ),
+                ],
+            },
+            If {
+                test: Binary {
+                    left: Identifier(
+                        "n",
+                    ),
+                    operator: IsEqual,
+                    right: Int(
+                        1,
+                    ),
+                },
+                body: [
+                    Return(
+                        Int(
+                            1,
+                        ),
+                    ),
+                ],
+            },
+            Return(
+                Binary {
+                    left: Call {
+                        identifier: "fib",
+                        arguments: [
+                            Binary {
+                                left: Identifier(
+                                    "n",
+                                ),
+                                operator: Minus,
+                                right: Int(
+                                    1,
+                                ),
+                            },
+                        ],
+                    },
+                    operator: Plus,
+                    right: Call {
+                        identifier: "fib",
+                        arguments: [
+                            Binary {
+                                left: Identifier(
+                                    "n",
+                                ),
+                                operator: Minus,
+                                right: Int(
+                                    2,
+                                ),
+                            },
+                        ],
+                    },
+                },
+            ),
+        ],
+    },
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = None
+[src/interpreter.rs:210:9] &expression = VariableDeclaration {
+    identifier: "fib",
+    expression: Function(
+        DefinedFunction {
+            parameters: [
+                "n",
+            ],
+            body: [
+                If {
+                    test: Binary {
+                        left: Identifier(
+                            "n",
+                        ),
+                        operator: IsLessThanOrEqual,
+                        right: Int(
+                            0,
+                        ),
+                    },
+                    body: [
+                        Return(
+                            Int(
+                                0,
+                            ),
+                        ),
+                    ],
+                },
+                If {
+                    test: Binary {
+                        left: Identifier(
+                            "n",
+                        ),
+                        operator: IsEqual,
+                        right: Int(
+                            1,
+                        ),
+                    },
+                    body: [
+                        Return(
+                            Int(
+                                1,
+                            ),
+                        ),
+                    ],
+                },
+                Return(
+                    Binary {
+                        left: Call {
+                            identifier: "fib",
+                            arguments: [
+                                Binary {
+                                    left: Identifier(
+                                        "n",
+                                    ),
+                                    operator: Minus,
+                                    right: Int(
+                                        1,
+                                    ),
+                                },
+                            ],
+                        },
+                        operator: Plus,
+                        right: Call {
+                            identifier: "fib",
+                            arguments: [
+                                Binary {
+                                    left: Identifier(
+                                        "n",
+                                    ),
+                                    operator: Minus,
+                                    right: Int(
+                                        2,
+                                    ),
+                                },
+                            ],
+                        },
+                    },
+                ),
+            ],
+        },
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = None
+[src/interpreter.rs:210:9] &expression = Int(
+    3,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = None
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    0,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: IsLessThanOrEqual,
+    right: Int(
+        0,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = If {
+    test: Binary {
+        left: Identifier(
+            "n",
+        ),
+        operator: IsLessThanOrEqual,
+        right: Int(
+            0,
+        ),
+    },
+    body: [
+        Return(
+            Int(
+                0,
+            ),
+        ),
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    1,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: IsEqual,
+    right: Int(
+        1,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = If {
+    test: Binary {
+        left: Identifier(
+            "n",
+        ),
+        operator: IsEqual,
+        right: Int(
+            1,
+        ),
+    },
+    body: [
+        Return(
+            Int(
+                1,
+            ),
+        ),
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    1,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: Minus,
+    right: Int(
+        1,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        3,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    0,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: IsLessThanOrEqual,
+    right: Int(
+        0,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = If {
+    test: Binary {
+        left: Identifier(
+            "n",
+        ),
+        operator: IsLessThanOrEqual,
+        right: Int(
+            0,
+        ),
+    },
+    body: [
+        Return(
+            Int(
+                0,
+            ),
+        ),
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    1,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: IsEqual,
+    right: Int(
+        1,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = If {
+    test: Binary {
+        left: Identifier(
+            "n",
+        ),
+        operator: IsEqual,
+        right: Int(
+            1,
+        ),
+    },
+    body: [
+        Return(
+            Int(
+                1,
+            ),
+        ),
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    1,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: Minus,
+    right: Int(
+        1,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        2,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    0,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: IsLessThanOrEqual,
+    right: Int(
+        0,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = If {
+    test: Binary {
+        left: Identifier(
+            "n",
+        ),
+        operator: IsLessThanOrEqual,
+        right: Int(
+            0,
+        ),
+    },
+    body: [
+        Return(
+            Int(
+                0,
+            ),
+        ),
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    1,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: IsEqual,
+    right: Int(
+        1,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    1,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Return(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = If {
+    test: Binary {
+        left: Identifier(
+            "n",
+        ),
+        operator: IsEqual,
+        right: Int(
+            1,
+        ),
+    },
+    body: [
+        Return(
+            Int(
+                1,
+            ),
+        ),
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Call {
+    identifier: "fib",
+    arguments: [
+        Binary {
+            left: Identifier(
+                "n",
+            ),
+            operator: Minus,
+            right: Int(
+                1,
+            ),
+        },
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    2,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: Minus,
+    right: Int(
+        2,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    0,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: IsLessThanOrEqual,
+    right: Int(
+        0,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    0,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Return(
+    Int(
+        0,
+    ),
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = If {
+    test: Binary {
+        left: Identifier(
+            "n",
+        ),
+        operator: IsLessThanOrEqual,
+        right: Int(
+            0,
+        ),
+    },
+    body: [
+        Return(
+            Int(
+                0,
+            ),
+        ),
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Call {
+    identifier: "fib",
+    arguments: [
+        Binary {
+            left: Identifier(
+                "n",
+            ),
+            operator: Minus,
+            right: Int(
+                2,
+            ),
+        },
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Call {
+        identifier: "fib",
+        arguments: [
+            Binary {
+                left: Identifier(
+                    "n",
+                ),
+                operator: Minus,
+                right: Int(
+                    1,
+                ),
+            },
+        ],
+    },
+    operator: Plus,
+    right: Call {
+        identifier: "fib",
+        arguments: [
+            Binary {
+                left: Identifier(
+                    "n",
+                ),
+                operator: Minus,
+                right: Int(
+                    2,
+                ),
+            },
+        ],
+    },
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Return(
+    Binary {
+        left: Call {
+            identifier: "fib",
+            arguments: [
+                Binary {
+                    left: Identifier(
+                        "n",
+                    ),
+                    operator: Minus,
+                    right: Int(
+                        1,
+                    ),
+                },
+            ],
+        },
+        operator: Plus,
+        right: Call {
+            identifier: "fib",
+            arguments: [
+                Binary {
+                    left: Identifier(
+                        "n",
+                    ),
+                    operator: Minus,
+                    right: Int(
+                        2,
+                    ),
+                },
+            ],
+        },
+    },
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Call {
+    identifier: "fib",
+    arguments: [
+        Binary {
+            left: Identifier(
+                "n",
+            ),
+            operator: Minus,
+            right: Int(
+                1,
+            ),
+        },
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    2,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: Minus,
+    right: Int(
+        2,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Identifier(
+    "n",
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    0,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Identifier(
+        "n",
+    ),
+    operator: IsLessThanOrEqual,
+    right: Int(
+        0,
+    ),
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Int(
+    0,
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Return(
+    Int(
+        0,
+    ),
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = If {
+    test: Binary {
+        left: Identifier(
+            "n",
+        ),
+        operator: IsLessThanOrEqual,
+        right: Int(
+            0,
+        ),
+    },
+    body: [
+        Return(
+            Int(
+                0,
+            ),
+        ),
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Call {
+    identifier: "fib",
+    arguments: [
+        Binary {
+            left: Identifier(
+                "n",
+            ),
+            operator: Minus,
+            right: Int(
+                2,
+            ),
+        },
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Binary {
+    left: Call {
+        identifier: "fib",
+        arguments: [
+            Binary {
+                left: Identifier(
+                    "n",
+                ),
+                operator: Minus,
+                right: Int(
+                    1,
+                ),
+            },
+        ],
+    },
+    operator: Plus,
+    right: Call {
+        identifier: "fib",
+        arguments: [
+            Binary {
+                left: Identifier(
+                    "n",
+                ),
+                operator: Minus,
+                right: Int(
+                    2,
+                ),
+            },
+        ],
+    },
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Return(
+    Binary {
+        left: Call {
+            identifier: "fib",
+            arguments: [
+                Binary {
+                    left: Identifier(
+                        "n",
+                    ),
+                    operator: Minus,
+                    right: Int(
+                        1,
+                    ),
+                },
+            ],
+        },
+        operator: Plus,
+        right: Call {
+            identifier: "fib",
+            arguments: [
+                Binary {
+                    left: Identifier(
+                        "n",
+                    ),
+                    operator: Minus,
+                    right: Int(
+                        2,
+                    ),
+                },
+            ],
+        },
+    },
+)
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        -1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Call {
+    identifier: "fib",
+    arguments: [
+        Int(
+            3,
+        ),
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)
+[src/interpreter.rs:210:9] &expression = Call {
+    identifier: "printLn",
+    arguments: [
+        Call {
+            identifier: "fib",
+            arguments: [
+                Int(
+                    3,
+                ),
+            ],
+        },
+    ],
+}
+[src/interpreter.rs:211:9] &self.environment.get(&"n".to_string()) = Some(
+    Int(
+        1,
+    ),
+)

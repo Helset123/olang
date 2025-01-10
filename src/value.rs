@@ -10,7 +10,16 @@ pub enum Function {
     Builtin(fn(Vec<Value>) -> Result<Value, ControlFlowValue>),
 }
 
-#[derive(Debug, Clone)]
+// FIXME: this implementation is pure bullshit
+impl PartialEq for Function {
+    fn eq(&self, _other: &Self) -> bool {
+        false
+    }
+}
+
+impl Eq for Function {}
+
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum Value {
     Function(Function),
     String(String),
