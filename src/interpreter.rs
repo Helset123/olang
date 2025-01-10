@@ -7,7 +7,7 @@ use crate::{
 use thiserror::Error;
 
 pub struct Interpreter {
-    environment: Environment,
+    environment: Environment, //
 }
 
 #[derive(Error, Debug)]
