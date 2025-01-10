@@ -1,5 +1,5 @@
 use crate::builtin::*;
-use crate::value::{ControlFlowValue, Function, Value};
+use crate::value::{ControlFlowValue, Exception, Function, Value};
 use std::collections::HashMap;
 
 pub struct Environment {
@@ -35,6 +35,24 @@ impl Environment {
         }
 
         None
+    }
+
+    pub fn assign(&mut self, id: &str, value: Value) -> Result<(), ControlFlowValue> {
+        let mut success = false;
+
+        for scope in self.scopes.iter_mut().rev() {
+            if scope.get(id).is_some() {
+                scope.insert(id.to_string(), value);
+                success = true;
+                break;
+            }
+        }
+
+        if success {
+            Ok(())
+        } else {
+            Err(ControlFlowValue::Exception(Exception::UndeclaredIdentifier))
+        }
     }
 
     pub fn declare(&mut self, id: String, value: Value) -> &mut Self {

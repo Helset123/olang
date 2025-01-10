@@ -1,5 +1,3 @@
-use core::fmt;
-
 use crate::lexer::{Lexer, LexerError, Region, Token, TokenValue, TokenValueDiscriminants};
 use strum::{Display, EnumDiscriminants};
 use thiserror::Error;
@@ -51,7 +49,6 @@ pub enum ExpressionValue {
     String(String),
     Bool(bool),
     Null,
-    Return(Box<Expression>),
     Block(Block),
     Identifier(String),
     Binary {
@@ -60,6 +57,10 @@ pub enum ExpressionValue {
         right: Box<Expression>,
     },
     VariableDeclaration {
+        identifier: String,
+        expression: Box<Expression>,
+    },
+    Assign {
         identifier: String,
         expression: Box<Expression>,
     },
@@ -161,16 +162,6 @@ impl Parser {
         self.advance(); // skip the closing brace
 
         Ok(expressions)
-    }
-
-    fn parse_return(&mut self) -> Result<ExpressionValue, ParserError> {
-        self.expect_token_discriminant(
-            ExpressionValueDiscriminants::Return,
-            TokenValueDiscriminants::KeywordReturn,
-        )?;
-        self.advance();
-
-        Ok(ExpressionValue::Return(Box::new(self.parse_expression()?)))
     }
 
     fn parse_identifier(&mut self) -> Result<ExpressionValue, ParserError> {
@@ -343,14 +334,40 @@ impl Parser {
         })
     }
 
+    fn parse_assign(&mut self) -> Result<ExpressionValue, ParserError> {
+        let identifier = match self.current_val() {
+            TokenValue::Identifier(v) => Ok(v),
+            _ => Err(self.expect_token_err(
+                ExpressionValueDiscriminants::Assign,
+                TokenValueDiscriminants::Identifier,
+            )),
+        }?
+        .clone();
+        self.advance();
+
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Assign,
+            TokenValueDiscriminants::EqualSign,
+        )?;
+        self.advance();
+
+        Ok(ExpressionValue::Assign {
+            identifier,
+            expression: Box::new(self.parse_expression()?),
+        })
+    }
+
     fn parse_primary(&mut self) -> Result<Expression, ParserError> {
         let start = self.current().region.start.clone();
         let value = match self.current_val() {
             TokenValue::Int(_) => self.parse_int(),
             TokenValue::String(_) => self.parse_string(),
             TokenValue::Identifier(_) => {
+                // TODO: create a self.next_value() function to make this look better
                 if self.tokens[self.t + 1].value == TokenValue::OpenParenthesis {
                     self.parse_call()
+                } else if self.tokens[self.t + 1].value == TokenValue::EqualSign {
+                    self.parse_assign()
                 } else {
                     self.parse_identifier()
                 }
@@ -371,7 +388,6 @@ impl Parser {
             TokenValue::KeywordNull => self.parse_null(),
             TokenValue::KeywordTrue | TokenValue::KeywordFalse => self.parse_bool(),
             TokenValue::OpenBrace => Ok(ExpressionValue::Block(self.parse_block()?)),
-            TokenValue::KeywordReturn => self.parse_return(),
             TokenValue::KeywordVar => self.parse_variable_declaration(),
             TokenValue::KeywordFun => self.parse_function(),
             TokenValue::KeywordIf => self.parse_if(),
