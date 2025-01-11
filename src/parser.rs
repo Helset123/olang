@@ -1,5 +1,4 @@
 use crate::lexer::{Lexer, LexerError, Region, Token, TokenValue, TokenValueDiscriminants};
-use std::fmt;
 use strum::{Display, EnumDiscriminants};
 use thiserror::Error;
 
