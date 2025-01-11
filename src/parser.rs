@@ -88,13 +88,7 @@ pub enum ExpressionValue {
     Break,
 }
 
-impl fmt::Debug for Expression {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:#?}", self.value)
-    }
-}
-
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Expression {
     region: Region,
     pub value: ExpressionValue,
