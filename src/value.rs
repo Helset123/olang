@@ -35,11 +35,15 @@ pub enum Exception {
     UndeclaredIdentifier,
     CalledValueIsNotFunction,
     ValueIsWrongType,
+    ContinueOutsideLoop,
+    BreakOutsideLoop,
 }
 
 #[derive(Error, Debug, Display)]
 pub enum ControlFlowValue {
     Exception(Exception),
+    Continue,
+    Break,
 }
 
 impl fmt::Display for Value {

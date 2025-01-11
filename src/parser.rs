@@ -84,6 +84,8 @@ pub enum ExpressionValue {
         test: Box<Expression>,
         body: Block,
     },
+    Continue,
+    Break,
 }
 
 impl fmt::Debug for Expression {
@@ -415,6 +417,24 @@ impl Parser {
         })
     }
 
+    fn parse_continue(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Continue,
+            TokenValueDiscriminants::KeywordContinue,
+        )?;
+        self.advance();
+        Ok(ExpressionValue::Continue)
+    }
+
+    fn parse_break(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Break,
+            TokenValueDiscriminants::KeywordBreak,
+        )?;
+        self.advance();
+        Ok(ExpressionValue::Break)
+    }
+
     fn parse_primary(&mut self) -> Result<Expression, ParserError> {
         let start = self.current().region.start.clone();
         let value = match self.current_val() {
@@ -450,6 +470,8 @@ impl Parser {
             TokenValue::KeywordFun => self.parse_function(),
             TokenValue::KeywordIf => self.parse_if(),
             TokenValue::KeywordWhile => self.parse_while(),
+            TokenValue::KeywordContinue => self.parse_continue(),
+            TokenValue::KeywordBreak => self.parse_break(),
             _ => Err(ParserError::UnexpectedToken {
                 while_parsing: None,
                 found: self.current().clone(),

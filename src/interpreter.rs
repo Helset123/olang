@@ -190,7 +190,16 @@ impl Interpreter {
             if !*self.eval_expression(test)?.into_bool()? {
                 break;
             }
-            result = self.eval_block(true, body)?;
+            match self.eval_block(true, body) {
+                Ok(v) => {
+                    result = v;
+                }
+                Err(ControlFlowValue::Continue) => continue,
+                Err(ControlFlowValue::Break) => break,
+                Err(e) => {
+                    return Err(e);
+                }
+            }
         }
 
         Ok(result)
@@ -207,6 +216,8 @@ impl Interpreter {
                 else_block,
             } => self.eval_if(clauses, else_block),
             ExpressionValue::While { test, body } => self.eval_while(test, body),
+            ExpressionValue::Continue => Err(ControlFlowValue::Continue),
+            ExpressionValue::Break => Err(ControlFlowValue::Break),
             ExpressionValue::Function(v) => Ok(Value::Function(Function::Defined(v.clone()))),
             ExpressionValue::Block(v) => self.eval_block(true, v),
             ExpressionValue::Identifier(id) => self.eval_identifier(id),
@@ -245,6 +256,12 @@ impl Interpreter {
                 Ok(v) => Ok(result = v),
                 Err(err) => match err {
                     ControlFlowValue::Exception(e) => Err(EvalError::UnhandledException(e)),
+                    ControlFlowValue::Continue => Err(EvalError::UnhandledException(
+                        Exception::ContinueOutsideLoop,
+                    )),
+                    ControlFlowValue::Break => {
+                        Err(EvalError::UnhandledException(Exception::BreakOutsideLoop))
+                    }
                 },
             }?;
         }

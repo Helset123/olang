@@ -6,6 +6,15 @@ fn fibonacci_sequence() {
 }
 
 #[test]
+fn while_loops() {
+    assert_eq!(
+        eval(include_str!("continue.olang")).unwrap(),
+        Value::Int(45)
+    );
+    assert_eq!(eval(include_str!("break.olang")).unwrap(), Value::Int(55));
+}
+
+#[test]
 fn strings() {
     assert_eq!(eval("\"arst\"").unwrap(), Value::String("arst".to_string()));
     assert_eq!(
