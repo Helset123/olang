@@ -14,6 +14,10 @@ pub struct Interpreter {
 pub enum EvalError {
     #[error("Unhandled exception: {0}")]
     UnhandledException(Exception),
+    #[error("\"continue\" keyword used outside of loop")]
+    ContinueOutsideLoop,
+    #[error("\"break\" keyword used outside of loop")]
+    BreakOutsideLoop,
     #[error(transparent)]
     Parser(#[from] ParserError),
     #[error(transparent)]
@@ -256,12 +260,8 @@ impl Interpreter {
                 Ok(v) => Ok(result = v),
                 Err(err) => match err {
                     ControlFlowValue::Exception(e) => Err(EvalError::UnhandledException(e)),
-                    ControlFlowValue::Continue => Err(EvalError::UnhandledException(
-                        Exception::ContinueOutsideLoop,
-                    )),
-                    ControlFlowValue::Break => {
-                        Err(EvalError::UnhandledException(Exception::BreakOutsideLoop))
-                    }
+                    ControlFlowValue::Continue => Err(EvalError::ContinueOutsideLoop),
+                    ControlFlowValue::Break => Err(EvalError::BreakOutsideLoop),
                 },
             }?;
         }

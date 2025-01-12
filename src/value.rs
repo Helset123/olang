@@ -35,8 +35,6 @@ pub enum Exception {
     UndeclaredIdentifier,
     CalledValueIsNotFunction,
     ValueIsWrongType,
-    ContinueOutsideLoop,
-    BreakOutsideLoop,
 }
 
 #[derive(Error, Debug, Display)]
