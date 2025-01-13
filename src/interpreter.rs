@@ -24,6 +24,17 @@ pub enum EvalError {
     Lexer(#[from] LexerError),
 }
 
+impl EvalError {
+    pub fn unwrap_exception(&self) -> &Exception {
+        match self {
+            Self::UnhandledException(v) => v,
+            _ => {
+                panic!("called `EvalError::unwrap_exception()` on something else than a `UnhandledException` error")
+            }
+        }
+    }
+}
+
 impl Interpreter {
     fn eval_binary(
         &mut self,
@@ -41,12 +52,19 @@ impl Interpreter {
             Operator::Multiply => Value::Int(left.into_int()? * right.into_int()?),
             Operator::Divide => Value::Int(left.into_int()? / right.into_int()?),
             Operator::Modulus => Value::Int(left.into_int()? % right.into_int()?),
+            Operator::Exponentiation => {
+                let base = *left.into_int()?;
+                let exponent = *right.into_int()?;
+                match (base as u64).checked_pow(exponent as u32) {
+                    Some(v) => Value::Int(v as i64),
+                    None => {
+                        return Err(ControlFlowValue::Exception(
+                            Exception::ExponentiationOverflowed,
+                        ))
+                    }
+                }
+            }
             Operator::IsEqual => Value::Bool(left == right),
-            // Operator::IsEqual => match left {
-            //     Value::Int(left) => Value::Bool(left == *right.into_int()?),
-            //     Value::Bool(left) => Value::Bool(left == *right.into_bool()?),
-            //     _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
-            // },
             Operator::IsNotEqual => match left {
                 Value::Int(left) => Value::Bool(left != *right.into_int()?),
                 Value::Bool(left) => Value::Bool(left != *right.into_bool()?),

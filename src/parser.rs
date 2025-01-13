@@ -24,6 +24,7 @@ pub enum Operator {
     Multiply,             // *
     Divide,               // /
     Modulus,              // %
+    Exponentiation,       // ^
     IsLessThan,           // <
     IsLessThanOrEqual,    // <=
     IsGreaterThan,        // >
@@ -478,8 +479,37 @@ impl Parser {
         })
     }
 
-    fn parse_multiplicative(&mut self) -> Result<Expression, ParserError> {
+    fn parse_exponentiative(&mut self) -> Result<Expression, ParserError> {
         let mut left = self.parse_primary()?;
+
+        loop {
+            let operator = match self.current_val() {
+                TokenValue::ExponentSign => Operator::Exponentiation,
+                _ => {
+                    break;
+                }
+            };
+            self.advance();
+
+            let right = self.parse_primary()?;
+            left = Expression {
+                region: Region {
+                    start: left.region.start.clone(),
+                    end: right.region.end.clone(),
+                },
+                value: ExpressionValue::Binary {
+                    left: Box::new(left),
+                    operator,
+                    right: Box::new(right),
+                },
+            }
+        }
+
+        Ok(left)
+    }
+
+    fn parse_multiplicative(&mut self) -> Result<Expression, ParserError> {
+        let mut left = self.parse_exponentiative()?;
 
         loop {
             let operator = match self.current_val() {
@@ -492,7 +522,7 @@ impl Parser {
             };
             self.advance();
 
-            let right = self.parse_primary()?;
+            let right = self.parse_exponentiative()?;
             left = Expression {
                 region: Region {
                     start: left.region.start.clone(),

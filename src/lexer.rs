@@ -245,6 +245,26 @@ impl Lexer {
                 continue;
             }
 
+            // check for comments
+            if self.current() == '#' {
+                self.advance();
+                // block comment
+                if self.current() == '[' {
+                    while self.c < self.source.len()
+                        && !(self.current() == ']' && self.next_or_space() == &'#')
+                    {
+                        self.advance();
+                    }
+                    self.advance();
+                    // else single line comments
+                } else {
+                    while self.c < self.source.len() && self.current() != '\n' {
+                        self.advance();
+                    }
+                }
+                self.advance();
+                continue;
+            }
             // string token
             if self.current() == '"' {
                 let mut value = "".to_string();

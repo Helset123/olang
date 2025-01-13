@@ -28,13 +28,14 @@ pub enum Value {
     Null,
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug, Display, PartialEq)]
 pub enum Exception {
     WrongNumberOfArguments,
     NestedReturns,
     UndeclaredIdentifier,
     CalledValueIsNotFunction,
     ValueIsWrongType,
+    ExponentiationOverflowed,
 }
 
 #[derive(Error, Debug, Display)]
