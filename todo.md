@@ -1,3 +1,0 @@
-- fix SystemException and SystemReturn
-- kanske använda Result eller något annat som implementrar trait try för system exceptions och system returns i olang
-- std library med not() function istället för !
