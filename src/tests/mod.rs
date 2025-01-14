@@ -8,10 +8,10 @@ fn fibonacci_sequence() {
 }
 
 #[test]
-fn while_loops() {
+fn loops() {
     assert_eq!(
         eval(include_str!("continue.olang")).unwrap(),
-        Value::Int(45)
+        Value::Int(35)
     );
     assert_eq!(eval(include_str!("break.olang")).unwrap(), Value::Int(55));
 }

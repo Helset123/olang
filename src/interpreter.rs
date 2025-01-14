@@ -201,28 +201,43 @@ impl Interpreter {
         Ok(Value::Null)
     }
 
-    fn eval_while(
+    fn eval_loop(
         &mut self,
-        test: &Expression,
-        body: &Vec<Expression>,
+        init: &Option<Box<Expression>>,
+        test: &Option<Box<Expression>>,
+        update: &Option<Box<Expression>>,
+        body: &Block,
     ) -> Result<Value, ControlFlowValue> {
         let mut result = Value::Null;
 
+        self.environment.push();
+
+        if let Some(init) = init {
+            self.eval_expression(init)?;
+        }
+
         loop {
-            if !*self.eval_expression(test)?.into_bool()? {
-                break;
+            if let Some(test) = test {
+                if !*self.eval_expression(test)?.into_bool()? {
+                    break;
+                }
             }
-            match self.eval_block(true, body) {
+            match self.eval_block(false, body) {
                 Ok(v) => {
                     result = v;
                 }
-                Err(ControlFlowValue::Continue) => continue,
+                Err(ControlFlowValue::Continue) => {}
                 Err(ControlFlowValue::Break) => break,
                 Err(e) => {
                     return Err(e);
                 }
             }
+            if let Some(update) = update {
+                self.eval_expression(update)?;
+            }
         }
+
+        self.environment.pop();
 
         Ok(result)
     }
@@ -237,7 +252,12 @@ impl Interpreter {
                 clauses,
                 else_block,
             } => self.eval_if(clauses, else_block),
-            ExpressionValue::While { test, body } => self.eval_while(test, body),
+            ExpressionValue::Loop {
+                init,
+                test,
+                update,
+                body,
+            } => self.eval_loop(init, test, update, body),
             ExpressionValue::Continue => Err(ControlFlowValue::Continue),
             ExpressionValue::Break => Err(ControlFlowValue::Break),
             ExpressionValue::Function(v) => Ok(Value::Function(Function::Defined(v.clone()))),

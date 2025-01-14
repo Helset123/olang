@@ -80,8 +80,10 @@ pub enum ExpressionValue {
         clauses: Vec<IfClause>,
         else_block: Option<Block>,
     },
-    While {
-        test: Box<Expression>,
+    Loop {
+        init: Option<Box<Expression>>,
+        test: Option<Box<Expression>>,
+        update: Option<Box<Expression>>,
         body: Block,
     },
     Continue,
@@ -375,17 +377,53 @@ impl Parser {
         })
     }
 
-    fn parse_while(&mut self) -> Result<ExpressionValue, ParserError> {
-        self.expect_token_discriminant(
-            ExpressionValueDiscriminants::While,
-            TokenValueDiscriminants::KeywordWhile,
-        )?;
+    fn parse_loop(&mut self) -> Result<ExpressionValue, ParserError> {
+        enum LoopType {
+            While,
+            For,
+            Loop,
+        }
+        let loop_type = match self.current_val() {
+            TokenValue::KeywordWhile => LoopType::While,
+            TokenValue::KeywordLoop => LoopType::Loop,
+            TokenValue::KeywordFor => LoopType::For,
+            _ => {
+                return Err(ParserError::UnexpectedToken {
+                    while_parsing: Some(ExpressionValueDiscriminants::Loop),
+                    found: self.current().clone(),
+                })
+            }
+        };
         self.advance();
 
-        let test = Box::new(self.parse_expression()?);
+        let mut init = None;
+        let mut test = None;
+        let mut update = None;
+
+        // parse the loop initalization expression
+        match loop_type {
+            LoopType::For => init = Some(Box::new(self.parse_expression()?)),
+            _ => {}
+        };
+        // parse the test expression
+        match loop_type {
+            LoopType::For | LoopType::While => test = Some(Box::new(self.parse_expression()?)),
+            _ => {}
+        };
+        // parse update expression
+        match loop_type {
+            LoopType::For => update = Some(Box::new(self.parse_expression()?)),
+            _ => {}
+        };
+
         let body = self.parse_block()?;
 
-        Ok(ExpressionValue::While { test, body })
+        Ok(ExpressionValue::Loop {
+            init,
+            test,
+            update,
+            body,
+        })
     }
 
     fn parse_assign(&mut self) -> Result<ExpressionValue, ParserError> {
@@ -463,7 +501,9 @@ impl Parser {
             TokenValue::KeywordVar => self.parse_variable_declaration(),
             TokenValue::KeywordFun => self.parse_function(),
             TokenValue::KeywordIf => self.parse_if(),
-            TokenValue::KeywordWhile => self.parse_while(),
+            TokenValue::KeywordWhile | TokenValue::KeywordFor | TokenValue::KeywordLoop => {
+                self.parse_loop()
+            }
             TokenValue::KeywordContinue => self.parse_continue(),
             TokenValue::KeywordBreak => self.parse_break(),
             _ => Err(ParserError::UnexpectedToken {

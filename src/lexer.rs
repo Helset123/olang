@@ -13,6 +13,8 @@ static KEYWORDS: phf::Map<&'static str, TokenValue> = phf_map! {
     "elif" => TokenValue::KeywordElif,
     "else" => TokenValue::KeywordElse,
     "while" => TokenValue::KeywordWhile,
+    "for" => TokenValue::KeywordFor,
+    "loop" => TokenValue::KeywordLoop,
     "continue" => TokenValue::KeywordContinue,
     "break" => TokenValue::KeywordBreak,
 };
@@ -29,6 +31,8 @@ pub enum TokenValue {
     KeywordElif,          // elif
     KeywordElse,          // else
     KeywordWhile,         // while
+    KeywordFor,           // for
+    KeywordLoop,          // loop
     KeywordContinue,      // continue
     KeywordBreak,         // break
     EqualSign,            // =
