@@ -21,7 +21,7 @@ pub fn eval(source: &str) -> Result<Value, EvalError> {
 fn main() -> Result<()> {
     let source = fs::read_to_string("source.olang")?;
 
-    // println!("AST: {:#?}", Parser::new(&source)?.parse()?);
+    println!("tokens: {:#?}", lexer::Lexer::new(&source).tokenize()?);
     eval(source.as_str())?;
     Ok(())
 }

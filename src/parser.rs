@@ -18,7 +18,7 @@ pub enum ParserError {
 }
 
 #[derive(Debug, Clone)]
-pub enum Operator {
+pub enum BinaryOperationOperator {
     Plus,                 // +
     Minus,                // -
     Multiply,             // *
@@ -33,6 +33,22 @@ pub enum Operator {
     IsNotEqual,           // !=
     And,                  // &&
     Or,                   // ||
+}
+
+#[derive(Debug, Clone)]
+pub enum AssignmentOperator {
+    Set,      // =
+    Plus,     // +=
+    Minus,    // -=
+    Multiply, // *=
+    Divide,   // /=
+    Modulo,   // %=
+}
+
+#[derive(Debug, Clone)]
+pub enum UpdateOperator {
+    Increment, // ++
+    Decremet,  // --
 }
 
 pub type Block = Vec<Expression>;
@@ -60,7 +76,7 @@ pub enum ExpressionValue {
     Identifier(String),
     Binary {
         left: Box<Expression>,
-        operator: Operator,
+        operator: BinaryOperationOperator,
         right: Box<Expression>,
     },
     VariableDeclaration {
@@ -69,7 +85,12 @@ pub enum ExpressionValue {
     },
     Assign {
         identifier: String,
+        operator: AssignmentOperator,
         expression: Box<Expression>,
+    },
+    Update {
+        identifier: String,
+        operator: UpdateOperator,
     },
     Function(DefinedFunction),
     Call {
@@ -128,6 +149,10 @@ impl Parser {
 
     fn previous(&self) -> &Token {
         &self.tokens[self.t - 1]
+    }
+
+    fn next_val(&self) -> &TokenValue {
+        &self.tokens[self.t + 1].value
     }
 
     #[track_caller]
@@ -437,15 +462,55 @@ impl Parser {
         .clone();
         self.advance();
 
-        self.expect_token_discriminant(
-            ExpressionValueDiscriminants::Assign,
-            TokenValueDiscriminants::EqualSign,
-        )?;
+        let operator = match self.current_val() {
+            TokenValue::EqualSign => AssignmentOperator::Set,
+            TokenValue::AdditionAssign => AssignmentOperator::Plus,
+            TokenValue::SubtractionAssign => AssignmentOperator::Minus,
+            TokenValue::MultiplicationAssign => AssignmentOperator::Multiply,
+            TokenValue::DivisionAssign => AssignmentOperator::Divide,
+            TokenValue::ModuloAssign => AssignmentOperator::Modulo,
+            _ => {
+                return Err(ParserError::UnexpectedToken {
+                    while_parsing: Some(ExpressionValueDiscriminants::Assign),
+                    found: self.current().clone(),
+                })
+            }
+        };
         self.advance();
 
         Ok(ExpressionValue::Assign {
             identifier,
+            operator,
             expression: Box::new(self.parse_expression()?),
+        })
+    }
+
+    fn parse_update(&mut self) -> Result<ExpressionValue, ParserError> {
+        let identifier = match self.current_val() {
+            TokenValue::Identifier(v) => Ok(v),
+            _ => Err(self.expect_token_err(
+                ExpressionValueDiscriminants::Assign,
+                TokenValueDiscriminants::Identifier,
+            )),
+        }?
+        .clone();
+        self.advance();
+
+        let operator = match self.current_val() {
+            TokenValue::Increment => UpdateOperator::Increment,
+            TokenValue::Decrement => UpdateOperator::Decremet,
+            _ => {
+                return Err(ParserError::UnexpectedToken {
+                    while_parsing: Some(ExpressionValueDiscriminants::Update),
+                    found: self.current().clone(),
+                })
+            }
+        };
+        self.advance();
+
+        Ok(ExpressionValue::Update {
+            identifier,
+            operator,
         })
     }
 
@@ -472,16 +537,17 @@ impl Parser {
         let value = match self.current_val() {
             TokenValue::Int(_) => self.parse_int(),
             TokenValue::String(_) => self.parse_string(),
-            TokenValue::Identifier(_) => {
-                // TODO: create a self.next_value() function to make this look better
-                if self.tokens[self.t + 1].value == TokenValue::OpenParenthesis {
-                    self.parse_call()
-                } else if self.tokens[self.t + 1].value == TokenValue::EqualSign {
-                    self.parse_assign()
-                } else {
-                    self.parse_identifier()
-                }
-            }
+            TokenValue::Identifier(_) => match self.next_val() {
+                TokenValue::OpenParenthesis => self.parse_call(),
+                TokenValue::EqualSign
+                | TokenValue::AdditionAssign
+                | TokenValue::SubtractionAssign
+                | TokenValue::MultiplicationAssign
+                | TokenValue::DivisionAssign
+                | TokenValue::ModuloAssign => self.parse_assign(),
+                TokenValue::Increment | TokenValue::Decrement => self.parse_update(),
+                _ => self.parse_identifier(),
+            },
             TokenValue::OpenParenthesis => {
                 self.advance(); // skip the open parenthesis (
 
@@ -524,7 +590,7 @@ impl Parser {
 
         loop {
             let operator = match self.current_val() {
-                TokenValue::ExponentSign => Operator::Exponentiation,
+                TokenValue::ExponentSign => BinaryOperationOperator::Exponentiation,
                 _ => {
                     break;
                 }
@@ -553,9 +619,9 @@ impl Parser {
 
         loop {
             let operator = match self.current_val() {
-                TokenValue::MultiplicationSign => Operator::Multiply,
-                TokenValue::DivisionSign => Operator::Divide,
-                TokenValue::ModuloSign => Operator::Modulus,
+                TokenValue::MultiplicationSign => BinaryOperationOperator::Multiply,
+                TokenValue::DivisionSign => BinaryOperationOperator::Divide,
+                TokenValue::ModuloSign => BinaryOperationOperator::Modulus,
                 _ => {
                     break;
                 }
@@ -584,8 +650,8 @@ impl Parser {
 
         loop {
             let operator = match self.current_val() {
-                TokenValue::PlusSign => Operator::Plus,
-                TokenValue::MinusSign => Operator::Minus,
+                TokenValue::PlusSign => BinaryOperationOperator::Plus,
+                TokenValue::MinusSign => BinaryOperationOperator::Minus,
                 _ => {
                     break;
                 }
@@ -614,12 +680,12 @@ impl Parser {
 
         loop {
             let operator = match self.current_val() {
-                TokenValue::IsEqual => Operator::IsEqual,
-                TokenValue::IsNotEqual => Operator::IsNotEqual,
-                TokenValue::IsGreaterThan => Operator::IsGreaterThan,
-                TokenValue::IsGreaterThanOrEqual => Operator::IsGreaterThanOrEqual,
-                TokenValue::IsLessThan => Operator::IsLessThan,
-                TokenValue::IsLessThanOrEqual => Operator::IsLessThanOrEqual,
+                TokenValue::IsEqual => BinaryOperationOperator::IsEqual,
+                TokenValue::IsNotEqual => BinaryOperationOperator::IsNotEqual,
+                TokenValue::IsGreaterThan => BinaryOperationOperator::IsGreaterThan,
+                TokenValue::IsGreaterThanOrEqual => BinaryOperationOperator::IsGreaterThanOrEqual,
+                TokenValue::IsLessThan => BinaryOperationOperator::IsLessThan,
+                TokenValue::IsLessThanOrEqual => BinaryOperationOperator::IsLessThanOrEqual,
                 _ => {
                     break;
                 }
@@ -648,8 +714,8 @@ impl Parser {
 
         loop {
             let operator = match self.current_val() {
-                TokenValue::And => Operator::And,
-                TokenValue::Or => Operator::Or,
+                TokenValue::And => BinaryOperationOperator::And,
+                TokenValue::Or => BinaryOperationOperator::Or,
                 _ => {
                     break;
                 }

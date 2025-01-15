@@ -14,6 +14,10 @@ fn loops() {
         Value::Int(35)
     );
     assert_eq!(eval(include_str!("break.olang")).unwrap(), Value::Int(55));
+    assert_eq!(
+        eval(include_str!("for.olang")).unwrap(),
+        Value::Int(87178291200)
+    );
 }
 
 #[test]
@@ -89,6 +93,14 @@ fn exponents() {
     // assert_eq!(eval("(0-2)**2").unwrap(), Value::Int(4));
     // assert_eq!(eval("(-2)**3").unwrap(), Value::Int(-8));
     // assert_eq!(eval("(-2)**2").unwrap(), Value::Int(4));
+}
+
+#[test]
+fn assign() {
+    assert_eq!(
+        eval(include_str!("assign.olang")).unwrap(),
+        Value::Int(430912)
+    )
 }
 
 #[test]

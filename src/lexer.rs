@@ -58,6 +58,13 @@ pub enum TokenValue {
     IsNotEqual,           // !=
     And,                  // &&
     Or,                   // ||
+    AdditionAssign,       // +=
+    SubtractionAssign,    // -=
+    MultiplicationAssign, // *=
+    DivisionAssign,       // /=
+    ModuloAssign,         // %=
+    Increment,            // ++
+    Decrement,            // --
 }
 
 #[derive(Debug, Clone)]
@@ -180,11 +187,47 @@ impl Lexer {
                 ')' => Some(TokenValue::CloseParenthesis),
                 '{' => Some(TokenValue::OpenBrace),
                 '}' => Some(TokenValue::CloseBrace),
-                '+' => Some(TokenValue::PlusSign),
-                '-' => Some(TokenValue::MinusSign),
-                '/' => Some(TokenValue::DivisionSign),
-                '%' => Some(TokenValue::ModuloSign),
+                '+' => match self.next_or_space() {
+                    '+' => {
+                        self.advance();
+                        Some(TokenValue::Increment)
+                    }
+                    '=' => {
+                        self.advance();
+                        Some(TokenValue::AdditionAssign)
+                    }
+                    _ => Some(TokenValue::PlusSign),
+                },
+                '-' => match self.next_or_space() {
+                    '-' => {
+                        self.advance();
+                        Some(TokenValue::Decrement)
+                    }
+                    '=' => {
+                        self.advance();
+                        Some(TokenValue::SubtractionAssign)
+                    }
+                    _ => Some(TokenValue::MinusSign),
+                },
+                '/' => match self.next_or_space() {
+                    '=' => {
+                        self.advance();
+                        Some(TokenValue::DivisionAssign)
+                    }
+                    _ => Some(TokenValue::DivisionSign),
+                },
+                '%' => match self.next_or_space() {
+                    '=' => {
+                        self.advance();
+                        Some(TokenValue::ModuloAssign)
+                    }
+                    _ => Some(TokenValue::ModuloSign),
+                },
                 '*' => match self.next_or_space() {
+                    '=' => {
+                        self.advance();
+                        Some(TokenValue::MultiplicationAssign)
+                    }
                     '*' => {
                         self.advance();
                         Some(TokenValue::ExponentSign)

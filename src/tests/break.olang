@@ -6,8 +6,8 @@ loop {
     if i > 10 {
         break
     }
-    result = result + i
-    i = i + 1
+    result += i
+    i++
 }
 
 result

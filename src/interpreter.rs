@@ -1,7 +1,10 @@
 use crate::{
     environment::Environment,
     lexer::LexerError,
-    parser::{Block, Expression, ExpressionValue, IfClause, Operator, Parser, ParserError},
+    parser::{
+        AssignmentOperator, BinaryOperationOperator, Block, Expression, ExpressionValue, IfClause,
+        Parser, ParserError, UpdateOperator,
+    },
     value::{ControlFlowValue, Exception, Function, Value},
 };
 use thiserror::Error;
@@ -35,11 +38,39 @@ impl EvalError {
     }
 }
 
+fn plus(left: Value, right: Value) -> Result<Value, ControlFlowValue> {
+    Ok(Value::Int(left.into_int()? + right.into_int()?))
+}
+fn minus(left: Value, right: Value) -> Result<Value, ControlFlowValue> {
+    Ok(Value::Int(left.into_int()? - right.into_int()?))
+}
+fn multiply(left: Value, right: Value) -> Result<Value, ControlFlowValue> {
+    Ok(Value::Int(left.into_int()? * right.into_int()?))
+}
+fn divide(left: Value, right: Value) -> Result<Value, ControlFlowValue> {
+    Ok(Value::Int(left.into_int()? / right.into_int()?))
+}
+fn modulo(left: Value, right: Value) -> Result<Value, ControlFlowValue> {
+    Ok(Value::Int(left.into_int()? % right.into_int()?))
+}
+fn exponent(base: Value, exponent: Value) -> Result<Value, ControlFlowValue> {
+    let base_int = *base.into_int()?;
+    let exponent_int = *exponent.into_int()?;
+    Ok(match (base_int as u64).checked_pow(exponent_int as u32) {
+        Some(v) => Value::Int(v as i64),
+        None => {
+            return Err(ControlFlowValue::Exception(
+                Exception::ExponentiationOverflowed,
+            ))
+        }
+    })
+}
+
 impl Interpreter {
     fn eval_binary(
         &mut self,
         left_expression: &Box<Expression>,
-        operator: &Operator,
+        operator: &BinaryOperationOperator,
         right_expression: &Box<Expression>,
     ) -> Result<Value, ControlFlowValue> {
         let left = self.eval_expression(left_expression)?;
@@ -47,35 +78,32 @@ impl Interpreter {
 
         // FIXME: utilize the Eq trait instead of this garbage
         Ok(match operator {
-            Operator::Plus => Value::Int(left.into_int()? + right.into_int()?),
-            Operator::Minus => Value::Int(left.into_int()? - right.into_int()?),
-            Operator::Multiply => Value::Int(left.into_int()? * right.into_int()?),
-            Operator::Divide => Value::Int(left.into_int()? / right.into_int()?),
-            Operator::Modulus => Value::Int(left.into_int()? % right.into_int()?),
-            Operator::Exponentiation => {
-                let base = *left.into_int()?;
-                let exponent = *right.into_int()?;
-                match (base as u64).checked_pow(exponent as u32) {
-                    Some(v) => Value::Int(v as i64),
-                    None => {
-                        return Err(ControlFlowValue::Exception(
-                            Exception::ExponentiationOverflowed,
-                        ))
-                    }
-                }
-            }
-            Operator::IsEqual => Value::Bool(left == right),
-            Operator::IsNotEqual => match left {
+            BinaryOperationOperator::Plus => plus(left, right)?,
+            BinaryOperationOperator::Minus => minus(left, right)?,
+            BinaryOperationOperator::Multiply => multiply(left, right)?,
+            BinaryOperationOperator::Divide => divide(left, right)?,
+            BinaryOperationOperator::Modulus => modulo(left, right)?,
+            BinaryOperationOperator::Exponentiation => exponent(left, right)?,
+            BinaryOperationOperator::IsEqual => Value::Bool(left == right),
+            BinaryOperationOperator::IsNotEqual => match left {
                 Value::Int(left) => Value::Bool(left != *right.into_int()?),
                 Value::Bool(left) => Value::Bool(left != *right.into_bool()?),
                 _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
             },
-            Operator::IsLessThan => Value::Bool(left.into_int()? < right.into_int()?),
-            Operator::IsLessThanOrEqual => Value::Bool(left.into_int()? <= right.into_int()?),
-            Operator::IsGreaterThan => Value::Bool(left.into_int()? > right.into_int()?),
-            Operator::IsGreaterThanOrEqual => Value::Bool(left.into_int()? >= right.into_int()?),
-            Operator::And => Value::Bool(*left.into_bool()? && *right.into_bool()?),
-            Operator::Or => Value::Bool(*left.into_bool()? || *right.into_bool()?),
+            BinaryOperationOperator::IsLessThan => {
+                Value::Bool(left.into_int()? < right.into_int()?)
+            }
+            BinaryOperationOperator::IsLessThanOrEqual => {
+                Value::Bool(left.into_int()? <= right.into_int()?)
+            }
+            BinaryOperationOperator::IsGreaterThan => {
+                Value::Bool(left.into_int()? > right.into_int()?)
+            }
+            BinaryOperationOperator::IsGreaterThanOrEqual => {
+                Value::Bool(left.into_int()? >= right.into_int()?)
+            }
+            BinaryOperationOperator::And => Value::Bool(*left.into_bool()? && *right.into_bool()?),
+            BinaryOperationOperator::Or => Value::Bool(*left.into_bool()? || *right.into_bool()?),
         })
     }
 
@@ -100,11 +128,8 @@ impl Interpreter {
         Ok(result)
     }
 
-    fn eval_identifier(&mut self, id: &String) -> Result<Value, ControlFlowValue> {
-        match self.environment.get(id) {
-            Some(v) => Ok(v),
-            None => Err(ControlFlowValue::Exception(Exception::UndeclaredIdentifier)),
-        }
+    fn eval_identifier(&mut self, id: &str) -> Result<Value, ControlFlowValue> {
+        self.environment.get_or_undeclared(id)
     }
 
     fn eval_call(
@@ -192,11 +217,64 @@ impl Interpreter {
 
     fn eval_assign(
         &mut self,
-        id: &String,
+        id: &str,
+        operator: &AssignmentOperator,
         expression: &Box<Expression>,
     ) -> Result<Value, ControlFlowValue> {
         let value = self.eval_expression(expression)?;
-        self.environment.assign(id.as_str(), value)?;
+
+        match operator {
+            AssignmentOperator::Set => {
+                self.environment.assign(id, value)?;
+            }
+            AssignmentOperator::Plus => {
+                self.environment
+                    .assign(id, plus(self.environment.get_or_undeclared(id)?, value)?)?;
+            }
+            AssignmentOperator::Minus => {
+                self.environment
+                    .assign(id, minus(self.environment.get_or_undeclared(id)?, value)?)?;
+            }
+            AssignmentOperator::Multiply => {
+                self.environment.assign(
+                    id,
+                    multiply(self.environment.get_or_undeclared(id)?, value)?,
+                )?;
+            }
+            AssignmentOperator::Divide => {
+                self.environment
+                    .assign(id, divide(self.environment.get_or_undeclared(id)?, value)?)?;
+            }
+            AssignmentOperator::Modulo => {
+                self.environment
+                    .assign(id, modulo(self.environment.get_or_undeclared(id)?, value)?)?;
+            }
+        }
+
+        Ok(Value::Null)
+    }
+
+    fn eval_update(
+        &mut self,
+        identifier: &str,
+        operator: &UpdateOperator,
+    ) -> Result<Value, ControlFlowValue> {
+        match operator {
+            UpdateOperator::Increment => self.environment.assign(
+                identifier,
+                plus(
+                    self.environment.get_or_undeclared(identifier)?,
+                    Value::Int(1),
+                )?,
+            ),
+            UpdateOperator::Decremet => self.environment.assign(
+                identifier,
+                minus(
+                    self.environment.get_or_undeclared(identifier)?,
+                    Value::Int(1),
+                )?,
+            ),
+        }?;
 
         Ok(Value::Null)
     }
@@ -273,8 +351,13 @@ impl Interpreter {
             } => self.eval_declare_variable(identifier, expression),
             ExpressionValue::Assign {
                 identifier,
+                operator,
                 expression,
-            } => self.eval_assign(identifier, expression),
+            } => self.eval_assign(identifier, operator, expression),
+            ExpressionValue::Update {
+                identifier,
+                operator,
+            } => self.eval_update(identifier, operator),
             ExpressionValue::Binary {
                 left,
                 operator,

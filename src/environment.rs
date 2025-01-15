@@ -25,7 +25,7 @@ impl Environment {
         self
     }
 
-    pub fn get(&self, id: &String) -> Option<Value> {
+    pub fn get(&self, id: &str) -> Option<Value> {
         for value in self.scopes.iter().rev() {
             match value.get(id) {
                 Some(v) => {
@@ -36,6 +36,11 @@ impl Environment {
         }
 
         None
+    }
+
+    pub fn get_or_undeclared(&self, id: &str) -> Result<Value, ControlFlowValue> {
+        self.get(id)
+            .ok_or(ControlFlowValue::Exception(Exception::UndeclaredIdentifier))
     }
 
     pub fn assign(&mut self, id: &str, value: Value) -> Result<(), ControlFlowValue> {
