@@ -65,6 +65,30 @@ fn exponent(base: Value, exponent: Value) -> Result<Value, ControlFlowValue> {
         }
     })
 }
+fn is_equal(left: Value, right: Value) -> bool {
+    left == right
+}
+fn is_not_equal(left: Value, right: Value) -> bool {
+    left != right
+}
+fn is_less_than(left: Value, right: Value) -> Result<bool, ControlFlowValue> {
+    Ok(left.into_int()? < right.into_int()?)
+}
+fn is_less_than_or_equal(left: Value, right: Value) -> Result<bool, ControlFlowValue> {
+    Ok(left.into_int()? <= right.into_int()?)
+}
+fn is_greater_than(left: Value, right: Value) -> Result<bool, ControlFlowValue> {
+    Ok(left.into_int()? > right.into_int()?)
+}
+fn is_greater_than_or_equal(left: Value, right: Value) -> Result<bool, ControlFlowValue> {
+    Ok(left.into_int()? >= right.into_int()?)
+}
+fn logical_and(left: Value, right: Value) -> Result<bool, ControlFlowValue> {
+    Ok(*left.into_bool()? && *right.into_bool()?)
+}
+fn logical_or(left: Value, right: Value) -> Result<bool, ControlFlowValue> {
+    Ok(*left.into_bool()? || *right.into_bool()?)
+}
 
 impl Interpreter {
     fn eval_binary(
@@ -84,26 +108,18 @@ impl Interpreter {
             BinaryOperationOperator::Divide => divide(left, right)?,
             BinaryOperationOperator::Modulus => modulo(left, right)?,
             BinaryOperationOperator::Exponentiation => exponent(left, right)?,
-            BinaryOperationOperator::IsEqual => Value::Bool(left == right),
-            BinaryOperationOperator::IsNotEqual => match left {
-                Value::Int(left) => Value::Bool(left != *right.into_int()?),
-                Value::Bool(left) => Value::Bool(left != *right.into_bool()?),
-                _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
-            },
-            BinaryOperationOperator::IsLessThan => {
-                Value::Bool(left.into_int()? < right.into_int()?)
-            }
+            BinaryOperationOperator::IsEqual => Value::Bool(is_equal(left, right)),
+            BinaryOperationOperator::IsNotEqual => Value::Bool(is_not_equal(left, right)),
+            BinaryOperationOperator::IsLessThan => Value::Bool(is_less_than(left, right)?),
             BinaryOperationOperator::IsLessThanOrEqual => {
-                Value::Bool(left.into_int()? <= right.into_int()?)
+                Value::Bool(is_less_than_or_equal(left, right)?)
             }
-            BinaryOperationOperator::IsGreaterThan => {
-                Value::Bool(left.into_int()? > right.into_int()?)
-            }
+            BinaryOperationOperator::IsGreaterThan => Value::Bool(is_greater_than(left, right)?),
             BinaryOperationOperator::IsGreaterThanOrEqual => {
-                Value::Bool(left.into_int()? >= right.into_int()?)
+                Value::Bool(is_greater_than_or_equal(left, right)?)
             }
-            BinaryOperationOperator::And => Value::Bool(*left.into_bool()? && *right.into_bool()?),
-            BinaryOperationOperator::Or => Value::Bool(*left.into_bool()? || *right.into_bool()?),
+            BinaryOperationOperator::LogicalAnd => Value::Bool(logical_and(left, right)?),
+            BinaryOperationOperator::LogicalOr => Value::Bool(logical_or(left, right)?),
         })
     }
 

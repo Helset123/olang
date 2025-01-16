@@ -31,8 +31,8 @@ pub enum BinaryOperationOperator {
     IsGreaterThanOrEqual, // >=
     IsEqual,              // ==
     IsNotEqual,           // !=
-    And,                  // &&
-    Or,                   // ||
+    LogicalAnd,           // &&
+    LogicalOr,                   // ||
 }
 
 #[derive(Debug, Clone)]
@@ -714,8 +714,8 @@ impl Parser {
 
         loop {
             let operator = match self.current_val() {
-                TokenValue::And => BinaryOperationOperator::And,
-                TokenValue::Or => BinaryOperationOperator::Or,
+                TokenValue::And => BinaryOperationOperator::LogicalAnd,
+                TokenValue::Or => BinaryOperationOperator::LogicalOr,
                 _ => {
                     break;
                 }
