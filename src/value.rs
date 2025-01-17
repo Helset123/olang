@@ -36,6 +36,7 @@ pub enum Exception {
     CalledValueIsNotFunction,
     ValueIsWrongType,
     ExponentiationOverflowed,
+    Custom(String),
 }
 
 #[derive(Error, Debug, Display)]

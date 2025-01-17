@@ -80,6 +80,7 @@ impl Default for Environment {
     fn default() -> Self {
         let mut env = Environment::new();
         env.declare_builtin("printLn".to_string(), print_ln)
+            .declare_builtin("readLn".to_string(), read_ln)
             .declare_builtin("toString".to_string(), to_string);
         env
     }
