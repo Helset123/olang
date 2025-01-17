@@ -32,5 +32,6 @@ pub fn read_ln(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
     io::stdin()
         .read_line(&mut input)
         .map_err(|err| ControlFlowValue::Exception(Exception::Custom(err.to_string())))?;
-    Ok(Value::String(input))
+
+    Ok(Value::String(input.trim().to_string()))
 }
