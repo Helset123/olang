@@ -71,4 +71,11 @@ impl Value {
             _ => Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
         }
     }
+
+    pub fn into_str(&self) -> Result<&str, ControlFlowValue> {
+        match self {
+            Value::String(v) => Ok(v),
+            _ => Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
+        }
+    }
 }

@@ -39,7 +39,11 @@ impl EvalError {
 }
 
 fn plus(left: Value, right: Value) -> Result<Value, ControlFlowValue> {
-    Ok(Value::Int(left.into_int()? + right.into_int()?))
+    Ok(match left {
+        Value::Int(left) => Value::Int(left + right.into_int()?),
+        Value::String(left) => Value::String(left + right.into_str()?),
+        _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
+    })
 }
 fn minus(left: Value, right: Value) -> Result<Value, ControlFlowValue> {
     Ok(Value::Int(left.into_int()? - right.into_int()?))
