@@ -360,7 +360,7 @@ impl Lexer {
                 let mut value = "".to_string();
 
                 while self.c < self.source.len()
-                    && self.current().is_alphanumeric()
+                    && (self.current().is_alphanumeric() || self.current() == '_')
                     && !self.current().is_whitespace()
                 {
                     value.push(self.current());
