@@ -1,0 +1,124 @@
+#!/usr/bin/env olang
+
+var GRID_SIZE = 10
+
+# intialize the grid
+var grid = [
+    [false true  false false false false false false false false]
+    [false false true  false false false false false false false]
+    [true  true  true  false false false false false false false]
+    [false false false false false false false false false false]
+    [false false false false false false false false false false]
+    [false false false false false false false false false false]
+    [false false false false false false false false false false]
+    [false false false false false false false false false false]
+    [false false false false false false false false false false]
+    [false false false false false false false false false false]
+]
+
+
+var formatGrid = fun() {
+    var output = ""
+
+    for var row = 0  row < GRID_SIZE  row++ {
+        for var col = 0  col < GRID_SIZE  col++ {
+            if grid[row col] {
+                output += "x"
+            } else {
+                output += " "
+            }
+        }
+        # TODO: add \n
+        output += "
+"
+    }
+
+    output
+}
+
+var getNeighbours = fun(row col) {
+    var result = 0
+
+    # top row
+    if row != 0 {
+        if col != 0 {
+            if grid[row-1 col-1] {
+                result++
+            }
+        }
+        if grid[row-1 col] {
+            result++
+        }
+        if col != GRID_SIZE-1 {
+            if grid[row-1 col+1] {
+                result++
+            }
+        }
+    }
+
+    # middle row
+    if col != 0 {
+        if grid[row col-1] {
+            result++
+        }
+    }
+    if col != GRID_SIZE-1 {
+        if grid[row col+1] {
+            result++
+        }
+    }
+
+    # bottom row
+    if row != GRID_SIZE-1 {
+        if col != 0 {
+            if grid[row+1 col-1] {
+                result++
+            }
+        }
+        if grid[row+1 col] {
+            result++
+        }
+        if col != GRID_SIZE-1 {
+            if grid[row+1 col+1] {
+                result++
+            }
+        }
+    }
+
+    result
+}
+
+var generation = fun() {
+    var newGrid = []
+
+    for var row = 0  row < GRID_SIZE  row++ {
+        var rowList = []
+
+        for var col = 0  col < GRID_SIZE  col++ {
+            var neighbours = getNeighbours(row col)
+            var living = grid[row col]
+            var survive = false
+
+            # TODO: simplify this
+            if neighbours == 2 && living {
+                survive = true
+            } elif neighbours == 3 {
+                survive = true
+            }
+
+            rowList += survive
+        }
+
+        newGrid += rowList
+    }
+
+    grid = newGrid
+}
+
+printLn(formatGrid())
+
+loop {
+    generation()
+    printLn(formatGrid())
+    sleep(500)
+}
