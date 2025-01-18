@@ -1,5 +1,5 @@
 use crate::value::{ControlFlowValue, Exception, Value};
-use std::{cmp::Reverse, io};
+use std::io;
 
 fn expect_num_of_argumets(arguments: &Vec<Value>, num: usize) -> Result<(), ControlFlowValue> {
     if arguments.len() != num {
