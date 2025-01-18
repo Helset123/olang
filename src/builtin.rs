@@ -47,7 +47,7 @@ pub fn len(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
 pub fn sleep(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
     expect_num_of_argumets(&arguments, 1)?;
 
-    thread::sleep(Duration::from_millis(50));
+    thread::sleep(Duration::from_millis(*arguments[0].into_int()? as u64));
 
     Ok(Value::Null)
 }
