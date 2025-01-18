@@ -1,5 +1,5 @@
 use crate::value::{ControlFlowValue, Exception, Value};
-use std::io;
+use std::{io, thread, time::Duration};
 
 fn expect_num_of_argumets(arguments: &Vec<Value>, num: usize) -> Result<(), ControlFlowValue> {
     if arguments.len() != num {
@@ -42,4 +42,12 @@ pub fn len(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
     Ok(Value::Int(
         arguments.first().unwrap().into_list()?.len() as i64
     ))
+}
+
+pub fn sleep(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
+    expect_num_of_argumets(&arguments, 1)?;
+
+    thread::sleep(Duration::from_millis(50));
+
+    Ok(Value::Null)
 }
