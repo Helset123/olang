@@ -25,6 +25,7 @@ pub enum Value {
     String(String),
     Int(i64),
     Bool(bool),
+    List(Vec<Value>),
     Null,
 }
 
@@ -36,6 +37,7 @@ pub enum Exception {
     CalledValueIsNotFunction,
     ValueIsWrongType,
     ExponentiationOverflowed,
+    IndexOutOfRange,
     Custom(String),
 }
 
@@ -54,6 +56,8 @@ impl fmt::Display for Value {
             Value::String(s) => write!(f, "{}", s),
             Value::Function(v) => write!(f, "{:?}", v),
             Value::Null => write!(f, "null"),
+            // TODO: !!!!
+            Value::List(_) => write!(f, "[]"),
         }
     }
 }
@@ -76,6 +80,13 @@ impl Value {
     pub fn into_str(&self) -> Result<&str, ControlFlowValue> {
         match self {
             Value::String(v) => Ok(v),
+            _ => Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
+        }
+    }
+
+    pub fn into_list(&self) -> Result<&Vec<Value>, ControlFlowValue> {
+        match self {
+            Value::List(v) => Ok(v),
             _ => Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
         }
     }

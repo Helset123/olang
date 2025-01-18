@@ -199,6 +199,26 @@ impl Interpreter {
         }
     }
 
+    fn eval_list(&mut self, expressions: &Vec<Expression>) -> Result<Value, ControlFlowValue> {
+        let mut values = vec![];
+
+        for expression in expressions {
+            values.push(self.eval_expression(expression)?);
+        }
+
+        Ok(Value::List(values))
+    }
+
+    fn eval_index(&mut self, identifier: &str, index: &i64) -> Result<Value, ControlFlowValue> {
+        Ok(self
+            .environment
+            .get_or_undeclared(identifier)?
+            .into_list()?
+            .get(*index as usize)
+            .ok_or(ControlFlowValue::Exception(Exception::IndexOutOfRange))?
+            .clone())
+    }
+
     fn eval_declare_variable(
         &mut self,
         id: &String,
@@ -365,6 +385,8 @@ impl Interpreter {
                 identifier,
                 arguments,
             } => self.eval_call(identifier, arguments),
+            ExpressionValue::List(expressions) => self.eval_list(expressions),
+            ExpressionValue::Index { identifier, index } => self.eval_index(identifier, index),
             ExpressionValue::VariableDeclaration {
                 identifier,
                 expression,

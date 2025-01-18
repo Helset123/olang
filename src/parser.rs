@@ -32,7 +32,7 @@ pub enum BinaryOperationOperator {
     IsEqual,              // ==
     IsNotEqual,           // !=
     LogicalAnd,           // &&
-    LogicalOr,                   // ||
+    LogicalOr,            // ||
 }
 
 #[derive(Debug, Clone)]
@@ -72,6 +72,7 @@ pub enum ExpressionValue {
     String(String),
     Bool(bool),
     Null,
+    List(Vec<Expression>),
     Block(Block),
     Identifier(String),
     Binary {
@@ -96,6 +97,10 @@ pub enum ExpressionValue {
     Call {
         identifier: String,
         arguments: Vec<Expression>,
+    },
+    Index {
+        identifier: String,
+        index: i64,
     },
     If {
         clauses: Vec<IfClause>,
@@ -202,6 +207,25 @@ impl Parser {
         self.advance(); // skip the closing brace
 
         Ok(expressions)
+    }
+
+    fn parse_list(&mut self) -> Result<ExpressionValue, ParserError> {
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::List,
+            TokenValueDiscriminants::OpenBracket,
+        )?;
+        self.advance();
+
+        let mut expressions: Vec<Expression> = vec![];
+        loop {
+            match self.current_val() {
+                TokenValue::CloseBracket => break,
+                _ => expressions.push(self.parse_expression()?),
+            };
+        }
+        self.advance(); // skip the closing bracket ]
+
+        Ok(ExpressionValue::List(expressions))
     }
 
     fn parse_identifier(&mut self) -> Result<ExpressionValue, ParserError> {
@@ -317,6 +341,40 @@ impl Parser {
             identifier,
             arguments,
         })
+    }
+
+    fn parse_index(&mut self) -> Result<ExpressionValue, ParserError> {
+        let identifier = match self.current_val() {
+            TokenValue::Identifier(v) => Ok(v.clone()),
+            _ => Err(self.expect_token_err(
+                ExpressionValueDiscriminants::Index,
+                TokenValueDiscriminants::Identifier,
+            )),
+        }?;
+        self.advance();
+
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Index,
+            TokenValueDiscriminants::OpenBracket,
+        )?;
+        self.advance();
+
+        let index = match self.current_val() {
+            TokenValue::Int(v) => Ok(*v),
+            _ => Err(self.expect_token_err(
+                ExpressionValueDiscriminants::Index,
+                TokenValueDiscriminants::Int,
+            )),
+        }?;
+        self.advance();
+
+        self.expect_token_discriminant(
+            ExpressionValueDiscriminants::Index,
+            TokenValueDiscriminants::CloseBracket,
+        )?;
+        self.advance();
+
+        Ok(ExpressionValue::Index { identifier, index })
     }
 
     fn parse_function(&mut self) -> Result<ExpressionValue, ParserError> {
@@ -539,6 +597,7 @@ impl Parser {
             TokenValue::String(_) => self.parse_string(),
             TokenValue::Identifier(_) => match self.next_val() {
                 TokenValue::OpenParenthesis => self.parse_call(),
+                TokenValue::OpenBracket => self.parse_index(),
                 TokenValue::EqualSign
                 | TokenValue::AdditionAssign
                 | TokenValue::SubtractionAssign
@@ -564,6 +623,7 @@ impl Parser {
             TokenValue::KeywordNull => self.parse_null(),
             TokenValue::KeywordTrue | TokenValue::KeywordFalse => self.parse_bool(),
             TokenValue::OpenBrace => Ok(ExpressionValue::Block(self.parse_block()?)),
+            TokenValue::OpenBracket => self.parse_list(),
             TokenValue::KeywordVar => self.parse_variable_declaration(),
             TokenValue::KeywordFun => self.parse_function(),
             TokenValue::KeywordIf => self.parse_if(),

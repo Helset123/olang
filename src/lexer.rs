@@ -38,6 +38,8 @@ pub enum TokenValue {
     EqualSign,            // =
     CloseParenthesis,     // )
     OpenParenthesis,      // (
+    OpenBracket,          // [
+    CloseBracket,         // ]
     OpenBrace,            // {
     CloseBrace,           // }
     PlusSign,             // +
@@ -187,6 +189,8 @@ impl Lexer {
                 ')' => Some(TokenValue::CloseParenthesis),
                 '{' => Some(TokenValue::OpenBrace),
                 '}' => Some(TokenValue::CloseBrace),
+                '[' => Some(TokenValue::OpenBracket),
+                ']' => Some(TokenValue::CloseBracket),
                 '+' => match self.next_or_space() {
                     '+' => {
                         self.advance();
