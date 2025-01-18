@@ -97,14 +97,7 @@ var generation = fun() {
         for var col = 0  col < GRID_SIZE  col++ {
             var neighbours = getNeighbours(row col)
             var living = grid[row col]
-            var survive = false
-
-            # TODO: simplify this
-            if neighbours == 2 && living {
-                survive = true
-            } elif neighbours == 3 {
-                survive = true
-            }
+            var survive = (neighbours == 2 && living) || neighbours == 3
 
             rowList += survive
         }
@@ -120,5 +113,5 @@ printLn(formatGrid())
 loop {
     generation()
     printLn(formatGrid())
-    sleep(500)
+    sleep(200)
 }
