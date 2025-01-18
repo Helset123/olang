@@ -1,5 +1,5 @@
 use crate::value::{ControlFlowValue, Exception, Value};
-use std::io;
+use std::{cmp::Reverse, io};
 
 fn expect_num_of_argumets(arguments: &Vec<Value>, num: usize) -> Result<(), ControlFlowValue> {
     if arguments.len() != num {
@@ -34,4 +34,12 @@ pub fn read_ln(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
         .map_err(|err| ControlFlowValue::Exception(Exception::Custom(err.to_string())))?;
 
     Ok(Value::String(input.trim().to_string()))
+}
+
+pub fn len(arguments: Vec<Value>) -> Result<Value, ControlFlowValue> {
+    expect_num_of_argumets(&arguments, 1)?;
+
+    Ok(Value::Int(
+        arguments.first().unwrap().into_list()?.len() as i64
+    ))
 }

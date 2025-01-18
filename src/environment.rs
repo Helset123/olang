@@ -81,7 +81,8 @@ impl Default for Environment {
         let mut env = Environment::new();
         env.declare_builtin("printLn".to_string(), print_ln)
             .declare_builtin("readLn".to_string(), read_ln)
-            .declare_builtin("toString".to_string(), to_string);
+            .declare_builtin("toString".to_string(), to_string)
+            .declare_builtin("len".to_string(), len);
         env
     }
 }
