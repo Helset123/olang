@@ -213,14 +213,20 @@ impl Interpreter {
         Ok(Value::List(values))
     }
 
-    fn eval_index(&mut self, identifier: &str, index: &i64) -> Result<Value, ControlFlowValue> {
-        Ok(self
-            .environment
-            .get_or_undeclared(identifier)?
-            .into_list()?
-            .get(*index as usize)
-            .ok_or(ControlFlowValue::Exception(Exception::IndexOutOfRange))?
-            .clone())
+    fn eval_index(
+        &mut self,
+        identifier: &str,
+        indexes: &Vec<Expression>,
+    ) -> Result<Value, ControlFlowValue> {
+        let mut value = self.environment.get_or_undeclared(identifier)?;
+        for index in indexes {
+            value = value
+                .into_list()?
+                .get(*self.eval_expression(index)?.into_int()? as usize)
+                .ok_or(ControlFlowValue::Exception(Exception::IndexOutOfRange))?
+                .clone()
+        }
+        Ok(value)
     }
 
     fn eval_declare_variable(
@@ -390,7 +396,10 @@ impl Interpreter {
                 arguments,
             } => self.eval_call(identifier, arguments),
             ExpressionValue::List(expressions) => self.eval_list(expressions),
-            ExpressionValue::Index { identifier, index } => self.eval_index(identifier, index),
+            ExpressionValue::Index {
+                identifier,
+                indexes,
+            } => self.eval_index(identifier, indexes),
             ExpressionValue::VariableDeclaration {
                 identifier,
                 expression,

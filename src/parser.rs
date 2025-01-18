@@ -100,7 +100,7 @@ pub enum ExpressionValue {
     },
     Index {
         identifier: String,
-        index: i64,
+        indexes: Vec<Expression>,
     },
     If {
         clauses: Vec<IfClause>,
@@ -359,22 +359,17 @@ impl Parser {
         )?;
         self.advance();
 
-        let index = match self.current_val() {
-            TokenValue::Int(v) => Ok(*v),
-            _ => Err(self.expect_token_err(
-                ExpressionValueDiscriminants::Index,
-                TokenValueDiscriminants::Int,
-            )),
-        }?;
-        self.advance();
+        let mut indexes = vec![];
+        while self.current_val() != &TokenValue::CloseBracket {
+            indexes.push(self.parse_expression()?)
+        }
 
-        self.expect_token_discriminant(
-            ExpressionValueDiscriminants::Index,
-            TokenValueDiscriminants::CloseBracket,
-        )?;
-        self.advance();
+        self.advance(); // skip the closing bracket ]
 
-        Ok(ExpressionValue::Index { identifier, index })
+        Ok(ExpressionValue::Index {
+            identifier,
+            indexes,
+        })
     }
 
     fn parse_function(&mut self) -> Result<ExpressionValue, ParserError> {
