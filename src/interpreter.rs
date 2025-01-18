@@ -42,6 +42,10 @@ fn plus(left: Value, right: Value) -> Result<Value, ControlFlowValue> {
     Ok(match left {
         Value::Int(left) => Value::Int(left + right.into_int()?),
         Value::String(left) => Value::String(left + right.into_str()?),
+        Value::List(mut left) => {
+            left.push(right);
+            Value::List(left)
+        }
         _ => return Err(ControlFlowValue::Exception(Exception::ValueIsWrongType)),
     })
 }
