@@ -56,8 +56,16 @@ impl fmt::Display for Value {
             Value::String(s) => write!(f, "{}", s),
             Value::Function(v) => write!(f, "{:?}", v),
             Value::Null => write!(f, "null"),
-            // TODO: !!!!
-            Value::List(_) => write!(f, "[]"),
+            Value::List(list) => {
+                write!(f, "[")?;
+                for (i, value) in list.iter().enumerate() {
+                    write!(f, "{}", value)?;
+                    if i != list.len() - 1 {
+                        write!(f, " ")?;
+                    }
+                }
+                write!(f, "]")
+            }
         }
     }
 }
