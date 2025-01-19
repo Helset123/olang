@@ -1,9 +1,75 @@
 #!/usr/bin/env olang
 
-var GRID_SIZE = 10
+# Still lifes
+var BLOCK = [
+    [false false false false]
+    [false true  true  false]
+    [false true  true  false]
+    [false false false false]
+]
 
-# intialize the grid
-var grid = [
+var BEEHIVE = [
+    [false false false false false false]
+    [false false true  true  false false]
+    [false true  false false true  false]
+    [false false true  true  false false]
+    [false false false false false false]
+]
+
+var LOAF = [
+    [false false false false false false]
+    [false false true  true  false false]
+    [false true  false false true  false]
+    [false false true  false true  false]
+    [false false false true  false false]
+    [false false false false false false]
+]
+
+var BOAT = [
+    [false false false false false]
+    [false true  true  false false]
+    [false true  false true  false]
+    [false false true  false false]
+    [false false false false false]
+]
+
+var TUB = [
+    [false false false false false]
+    [false false true  false false]
+    [false true  false true  false]
+    [false false true  false false]
+    [false false false false false]
+]
+
+# Oscillators
+var BLINKER = [
+    [false false false false false]
+    [false false true  false false]
+    [false false true  false false]
+    [false false true  false false]
+    [false false false false false]
+]
+
+var TOAD = [
+    [false false false false false false]
+    [false false false false false false]
+    [false false true  true  true  false]
+    [false true  true  true  false false]
+    [false false false false false false]
+    [false false false false false false]
+]
+
+var BEACON = [
+    [false false false false false false]
+    [false true  true  false false false]
+    [false true  false false false false]
+    [false false false false true  false]
+    [false false false true  true  false]
+    [false false false false false false]
+]
+
+# Spaceships
+var GLIDER = [
     [false true  false false false false false false false false]
     [false false true  false false false false false false false]
     [true  true  true  false false false false false false false]
@@ -16,16 +82,87 @@ var grid = [
     [false false false false false false false false false false]
 ]
 
+var LWSS = [
+    [false false false false false false false false false false false false false false false false false false false false]
+    [false true  true  true  true  false false false false false false false false false false false false false false false]
+    [true  false false false true  false false false false false false false false false false false false false false false]
+    [false false false false true  false false false false false false false false false false false false false false false]
+    [true  false false true  false false false false false false false false false false false false false false false false]
+]
+
+var MWSS = [
+    [false false false false false false false false false false false false false false false false false false false false]
+    [false true  true  true  true  true  false false false false false false false false false false false false false false]
+    [true  false false false false true  false false false false false false false false false false false false false false]
+    [false false false false false true  false false false false false false false false false false false false false false]
+    [true  false false false true  false false false false false false false false false false false false false false false]
+    [false false true  false false false false false false false false false false false false false false false false false]
+]
+
+var HWSS = [
+    [false false false false false false false false false false false false false false false false false false false false]
+    [false false false false false false false false false false false false false false false false false false false false]
+    [false true  true  true  true  true  false false false false false false false false false false false false false false]
+    [true  false false false false true  false false false false false false false false false false false false false false]
+    [false false false false false true  false false false false false false false false false false false false false false]
+    [true  false false false true  false false false false false false false false false false false false false false false]
+    [false false true  false false false false false false false false false false false false false false false false false]
+]
+
+printLn("Pick a starting grid:
+    Still lifes:
+        1  - Block
+        2  - Beehive
+        3  - Loaf
+        4  - Boat
+        5  - Tub
+    Oscillators:
+        10 - Blinker
+        11 - Toad
+        12 - Beacon
+    Spaceships:
+        20 - Glider
+        21 - Light-weight spaceship
+        22 - Middle-weight spaceship")
+
+var input = readLn()
+var grid = if input == "1" {
+    BLOCK
+} elif input == "2" {
+    BEEHIVE
+} elif input == "3" {
+    LOAF
+} elif input == "4" {
+    BOAT
+} elif input == "5" {
+    TUB
+} elif input == "10" {
+    BLINKER
+} elif input == "11" {
+    TOAD
+} elif input == "12" {
+    BEACON
+} elif input == "20" {
+    GLIDER
+} elif input == "21" {
+    LWSS
+} elif input == "22" {
+    MWSS
+}
+
+var gridRows = len(grid)
+var gridCols = len(grid[0])
+
 
 var formatGrid = fun() {
     var output = ""
 
-    for var row = 0  row < GRID_SIZE  row++ {
-        for var col = 0  col < GRID_SIZE  col++ {
+    for var row = 0  row < gridRows  row++ {
+        for var col = 0  col < gridCols  col++ {
             if grid[row col] {
-                output += "x"
+                output += "██"
             } else {
-                output += " "
+                output += "  "
             }
         }
         # TODO: add \n
@@ -49,7 +186,7 @@ var getNeighbours = fun(row col) {
         if grid[row-1 col] {
             result++
         }
-        if col != GRID_SIZE-1 {
+        if col != gridCols-1 {
             if grid[row-1 col+1] {
                 result++
             }
@@ -62,14 +199,14 @@ var getNeighbours = fun(row col) {
             result++
         }
     }
-    if col != GRID_SIZE-1 {
+    if col != gridCols-1 {
         if grid[row col+1] {
             result++
         }
     }
 
     # bottom row
-    if row != GRID_SIZE-1 {
+    if row != gridRows-1 {
         if col != 0 {
             if grid[row+1 col-1] {
                 result++
@@ -78,7 +215,7 @@ var getNeighbours = fun(row col) {
         if grid[row+1 col] {
             result++
         }
-        if col != GRID_SIZE-1 {
+        if col != gridCols-1 {
             if grid[row+1 col+1] {
                 result++
             }
@@ -91,10 +228,10 @@ var getNeighbours = fun(row col) {
 var generation = fun() {
     var newGrid = []
 
-    for var row = 0  row < GRID_SIZE  row++ {
+    for var row = 0  row < gridRows  row++ {
         var rowList = []
 
-        for var col = 0  col < GRID_SIZE  col++ {
+        for var col = 0  col < gridCols  col++ {
             var neighbours = getNeighbours(row col)
             var living = grid[row col]
             var survive = (neighbours == 2 && living) || neighbours == 3
@@ -113,5 +250,5 @@ printLn(formatGrid())
 loop {
     generation()
     printLn(formatGrid())
-    sleep(200)
+    sleep(500)
 }
