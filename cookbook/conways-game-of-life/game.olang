@@ -84,6 +84,7 @@ var GLIDER = [
 
 var LWSS = [
     [false false false false false false false false false false false false false false false false false false false false]
+    [false false false false false false false false false false false false false false false false false false false false]
     [false true  true  true  true  false false false false false false false false false false false false false false false]
     [true  false false false true  false false false false false false false false false false false false false false false]
     [false false false false true  false false false false false false false false false false false false false false false]
@@ -91,15 +92,6 @@ var LWSS = [
 ]
 
 var MWSS = [
-    [false false false false false false false false false false false false false false false false false false false false]
-    [false true  true  true  true  true  false false false false false false false false false false false false false false]
-    [true  false false false false true  false false false false false false false false false false false false false false]
-    [false false false false false true  false false false false false false false false false false false false false false]
-    [true  false false false true  false false false false false false false false false false false false false false false]
-    [false false true  false false false false false false false false false false false false false false false false false]
-]
-
-var HWSS = [
     [false false false false false false false false false false false false false false false false false false false false]
     [false false false false false false false false false false false false false false false false false false false false]
     [false true  true  true  true  true  false false false false false false false false false false false false false false]
@@ -153,7 +145,6 @@ var grid = if input == "1" {
 var gridRows = len(grid)
 var gridCols = len(grid[0])
 
-
 var formatGrid = fun() {
     var output = ""
 
@@ -173,29 +164,20 @@ var formatGrid = fun() {
     output
 }
 
-var getNeighbours = fun(row col) {
+var getNeighboursRow = fun(row col countCenter) {
     var result = 0
 
-    # top row
-    if row != 0 {
-        if col != 0 {
-            if grid[row-1 col-1] {
-                result++
-            }
-        }
-        if grid[row-1 col] {
-            result++
-        }
-        if col != gridCols-1 {
-            if grid[row-1 col+1] {
-                result++
-            }
-        }
-    }
-
-    # middle row
     if col != 0 {
         if grid[row col-1] {
+            result++
+        }
+    } else {
+        if grid[row gridCols-1] {
+            result++
+        }
+    }
+    if countCenter {
+        if grid[row col] {
             result++
         }
     }
@@ -203,23 +185,28 @@ var getNeighbours = fun(row col) {
         if grid[row col+1] {
             result++
         }
-    }
-
-    # bottom row
-    if row != gridRows-1 {
-        if col != 0 {
-            if grid[row+1 col-1] {
-                result++
-            }
-        }
-        if grid[row+1 col] {
+    } else {
+        if grid[row 0] {
             result++
         }
-        if col != gridCols-1 {
-            if grid[row+1 col+1] {
-                result++
-            }
-        }
+    }
+
+    result
+}
+
+var getNeighbours = fun(row col) {
+    var result = 0
+
+    if row != 0 {
+        result += getNeighboursRow(row-1 col true)
+    } else {
+        result += getNeighboursRow(gridRows-1 col true)
+    }
+    result += getNeighboursRow(row col false)
+    if row != gridRows-1 {
+        result += getNeighboursRow(row+1 col true)
+    } else {
+        result += getNeighboursRow(0 col true)
     }
 
     result
@@ -250,5 +237,5 @@ printLn(formatGrid())
 loop {
     generation()
     printLn(formatGrid())
-    sleep(500)
+    sleep(100)
 }
